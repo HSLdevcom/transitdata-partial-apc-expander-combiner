@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package proto;
+package hfp;
 
 option java_package = "fi.hsl.common.hfp.proto";
 option java_outer_classname = "Hfp";

@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package proto;
+package mqtt;
 
 option java_package = "fi.hsl.common.mqtt.proto";
 option java_outer_classname = "Mqtt";
