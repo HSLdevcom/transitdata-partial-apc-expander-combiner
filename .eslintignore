@@ -1,3 +1,4 @@
+src/partialApc.ts
 src/protobuf/hfp.d.ts
 src/protobuf/mqtt.d.ts
 src/protobuf/passengerCount.d.ts
