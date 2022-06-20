@@ -46,13 +46,13 @@ const exitGracefully = async (
   }
   try {
     if (partialApcConsumer) {
-      logger.info("Close partial-APC Pulsar consumer");
+      logger.info("Close partial APC Pulsar consumer");
       await partialApcConsumer.close();
     }
   } catch (err) {
     logger.error(
       { err },
-      "Something went wrong when closing partial-APC Pulsar consumer"
+      "Something went wrong when closing partial APC Pulsar consumer"
     );
   }
   try {
@@ -170,7 +170,7 @@ const exitGracefully = async (
         client,
         config.pulsar.hfpConsumerConfig
       );
-      logger.info("Create partial-APC Pulsar consumer");
+      logger.info("Create partial APC Pulsar consumer");
       partialApcConsumer = await createPulsarConsumer(
         client,
         config.pulsar.partialApcConsumerConfig
