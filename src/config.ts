@@ -1,6 +1,16 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
 
+export type UniqueVehicleId = string;
+
+export type VehicleCapacityMap = Map<UniqueVehicleId, number>;
+
+export interface ProcessingConfig {
+  apcWaitInSeconds: number;
+  vehicleCapacities: VehicleCapacityMap;
+  defaultVehicleCapacity: number;
+}
+
 export interface PulsarConfig {
   clientConfig: Pulsar.ClientConfig;
   producerConfig: Pulsar.ProducerConfig;
@@ -13,6 +23,7 @@ export interface HealthCheckConfig {
 }
 
 export interface Config {
+  processing: ProcessingConfig;
   pulsar: PulsarConfig;
   healthCheck: HealthCheckConfig;
 }
@@ -40,6 +51,72 @@ const getOptionalBooleanWithDefault = (
     result = str === "true";
   }
   return result;
+};
+
+const getOptionalFiniteFloatWithDefault = (
+  envVariable: string,
+  defaultValue: number
+) => {
+  let result = defaultValue;
+  const str = getOptional(envVariable);
+  if (str !== undefined) {
+    result = Number.parseFloat(str);
+    if (!Number.isFinite(result)) {
+      throw new Error(`${envVariable} must be a finite float`);
+    }
+  }
+  return result;
+};
+
+const getVehicleCapacities = (): VehicleCapacityMap => {
+  const envVariable = "VEHICLE_CAPACITIES";
+  // Check the contents below. Crashing here is fine, too.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const parsed = JSON.parse(getRequired(envVariable)) as [string, number][];
+  // Check the contents below. Crashing here is fine, too.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  const map: VehicleCapacityMap = new Map(parsed);
+  if (map.size !== parsed.length) {
+    throw new Error(
+      `${envVariable} has ${parsed.length - map.size} repeated vehicles.`
+    );
+  }
+  if (map.size < 1) {
+    throw new Error(
+      `${envVariable} must have at least one entries() pair in the form of a stringified JSON array of arrays.`
+    );
+  }
+  if (
+    Array.from(map.entries()).some(
+      ([vehicle, capacity]) =>
+        typeof vehicle !== "string" ||
+        typeof capacity !== "number" ||
+        !Number.isFinite(capacity) ||
+        capacity <= 0
+    )
+  ) {
+    throw new Error(
+      `${envVariable} must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
+    );
+  }
+  return map;
+};
+
+const getProcessingConfig = (): ProcessingConfig => {
+  const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
+    "APC_WAIT_IN_SECONDS",
+    6
+  );
+  const vehicleCapacities = getVehicleCapacities();
+  const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
+    "DEFAULT_VEHICLE_CAPACITY",
+    78
+  );
+  return {
+    apcWaitInSeconds,
+    vehicleCapacities,
+    defaultVehicleCapacity,
+  };
 };
 
 const createPulsarLog =
@@ -138,6 +215,7 @@ const getHealthCheckConfig = () => {
 };
 
 export const getConfig = (logger: pino.Logger): Config => ({
+  processing: getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });
