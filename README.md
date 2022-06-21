@@ -75,8 +75,8 @@ flowchart TB;
 
 ## Docker
 
-You can use the Docker image `ghcr.io/hsldevcom/transitdata-partial-apc-expander-combiner:edge`.
-Check out [the available tags](https://github.com/HSLdevcom/transitdata-partial-apc-expander-combiner/pkgs/container/transitdata-partial-apc-expander-combiner).
+You can use the Docker image `hsldevcom/transitdata-partial-apc-expander-combiner:edge`.
+Check out [the available tags](https://hub.docker.com/r/hsldevcom/transitdata-partial-apc-expander-combiner).
 
 ## Configuration
 
