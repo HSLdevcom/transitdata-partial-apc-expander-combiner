@@ -2,11 +2,7 @@ import pino from "pino";
 import type Pulsar from "pulsar-client";
 import { getConfig } from "./config";
 import createHealthCheckServer from "./healthCheck";
-import createMapper from "./mapper";
-import {
-  keepExpandingAndCombiningAndSending,
-  keepUpdatingTripDetails,
-} from "./matcher";
+import keepProcessingMessages from "./messageProcessing";
 import {
   createPulsarClient,
   createPulsarProducer,
@@ -155,8 +151,6 @@ const exitGracefully = async (
 
       logger.info("Read configuration");
       const config = getConfig(logger);
-      logger.info("Create mapping functions");
-      const { updateTripDetails, expandWithTripDetails } = createMapper(logger);
       logger.info("Create health check server");
       ({ closeHealthCheckServer, setHealthOk } = createHealthCheckServer(
         config.healthCheck
@@ -177,16 +171,13 @@ const exitGracefully = async (
       );
       logger.info("Set health check status to OK");
       setHealthOk(true);
-      logger.info("Keep matching");
-      const promises = [
-        keepUpdatingTripDetails(hfpConsumer, updateTripDetails),
-        keepExpandingAndCombiningAndSending(
-          producer,
-          partialApcConsumer,
-          expandWithTripDetails
-        ),
-      ];
-      await Promise.any(promises);
+      logger.info("Keep processing messages");
+      await keepProcessingMessages(
+        logger,
+        producer,
+        hfpConsumer,
+        partialApcConsumer
+      );
     } catch (err) {
       exitHandler(1, transformUnknownToError(err));
     }
