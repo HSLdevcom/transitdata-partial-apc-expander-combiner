@@ -8,6 +8,40 @@ Combine the expanded messages by stops so that the combined messages look like f
 
 This project depends indirectly on [transitdata-common](https://github.com/HSLdevcom/transitdata-common) project for the Protobuf proto definition files though the files have been slightly modified.
 
+## Business logic
+
+```mermaid
+flowchart TB;
+  %% Nodes
+
+  start("Start handling either an HFP or a partial APC event.")
+  stop("Stop processing the event.")
+  hfp("Start handling the HFP event.")
+  journeyType("Assess the journey type.")
+  eventType("Assess the event type.")
+  clearApc("Clear the APC values for this vehicle\nfrom the APC cache.")
+  sumApc("Add the APC values\ninto the existing APC values\nfor this vehicle\nin the APC cache.")
+  sendApc("Clear any previous timer for this vehicle.\nStart a new timer of n seconds for this vehicle.\nWhen the time is up,\nread the APC values for this vehicle from the APC cache\nand combine them with the trip details from this event.\nSend the combination to the Pulsar cluster.")
+
+  %% Edges
+  %%
+  %% Events from https://digitransit.fi/en/developers/apis/4-realtime-api/vehicle-positions/ on 2022-06-20
+
+  start -- "partial APC event" --> sumApc
+  start -- "HFP event" --> hfp;
+  hfp -- upcoming --> stop;
+  hfp -- ongoing --> journeyType;
+  journeyType -- "journey,\nsignoff" --> eventType;
+  journeyType -- deadrun --> clearApc;
+  eventType -- "vp,\ndue,\narr,\nars,\npas,\nwait,\ndoo,\ndoc,\ntlr,\ntla,\nda,\ndout,\nba,\nbout,\nvja" --> stop;
+  eventType -- dep --> sendApc;
+  eventType -- pde --> sendApc;
+  eventType -- vjout --> sendApc;
+  sendApc --> clearApc;
+  clearApc --> stop;
+  sumApc --> stop;
+```
+
 ## Development
 
 1. Install [the build dependencies for the Apache Pulsar C++ client](https://pulsar.apache.org/docs/en/client-libraries-cpp/#system-requirements).
