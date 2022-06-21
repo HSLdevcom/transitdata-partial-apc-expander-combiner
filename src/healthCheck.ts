@@ -1,12 +1,23 @@
 import http from "node:http";
 import util from "node:util";
+import type Pulsar from "pulsar-client";
 import type { HealthCheckConfig } from "./config";
 
-const createHealthCheckServer = ({ port }: HealthCheckConfig) => {
-  let isHealthOk = false;
+const createHealthCheckServer = (
+  { port }: HealthCheckConfig,
+  producer: Pulsar.Producer,
+  hfpConsumer: Pulsar.Consumer,
+  partialApcConsumer: Pulsar.Consumer
+) => {
+  let isHealthSetToOk = false;
   let server: http.Server | undefined = http.createServer((req, res) => {
     if (req.url === "/healthz") {
-      if (isHealthOk) {
+      if (
+        isHealthSetToOk &&
+        producer.isConnected() &&
+        hfpConsumer.isConnected() &&
+        partialApcConsumer.isConnected()
+      ) {
         res.writeHead(204);
       } else {
         res.writeHead(500);
@@ -17,8 +28,8 @@ const createHealthCheckServer = ({ port }: HealthCheckConfig) => {
     res.end();
   });
   server.listen(port);
-  const setHealthOk = (isOk: boolean) => {
-    isHealthOk = isOk;
+  const setHealth = (isOk: boolean) => {
+    isHealthSetToOk = isOk;
   };
   const closeHealthCheckServer = async () => {
     if (server && server.listening) {
@@ -26,7 +37,7 @@ const createHealthCheckServer = ({ port }: HealthCheckConfig) => {
       server = undefined;
     }
   };
-  return { closeHealthCheckServer, setHealthOk };
+  return { closeHealthCheckServer, setHealth };
 };
 
 export default createHealthCheckServer;

@@ -114,7 +114,7 @@ const exitGracefully = async (
       sync: true,
     });
 
-    let setHealthOk: (isOk: boolean) => void;
+    let setHealth: (isOk: boolean) => void;
     let closeHealthCheckServer: () => Promise<void>;
     let client: Pulsar.Client;
     let producer: Pulsar.Producer;
@@ -128,7 +128,7 @@ const exitGracefully = async (
         logger,
         exitCode,
         exitError,
-        setHealthOk,
+        setHealth,
         closeHealthCheckServer,
         client,
         producer,
@@ -151,10 +151,6 @@ const exitGracefully = async (
 
       logger.info("Read configuration");
       const config = getConfig(logger);
-      logger.info("Create health check server");
-      ({ closeHealthCheckServer, setHealthOk } = createHealthCheckServer(
-        config.healthCheck
-      ));
       logger.info("Create Pulsar client");
       client = createPulsarClient(config.pulsar);
       logger.info("Create Pulsar producer");
@@ -169,8 +165,15 @@ const exitGracefully = async (
         client,
         config.pulsar.partialApcConsumerConfig
       );
+      logger.info("Create health check server");
+      ({ closeHealthCheckServer, setHealth } = createHealthCheckServer(
+        config.healthCheck,
+        producer,
+        hfpConsumer,
+        partialApcConsumer
+      ));
       logger.info("Set health check status to OK");
-      setHealthOk(true);
+      setHealth(true);
       logger.info("Keep processing messages");
       await keepProcessingMessages(
         logger,
