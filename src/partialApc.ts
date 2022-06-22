@@ -1,18 +1,19 @@
 /**
- * Generated manually with https://app.quicktype.io/ on 2022-06-10 using the
- * example JSON given in the operator procurement APC specification.
+ * Generated manually with https://app.quicktype.io/ on 2022-06-22 using the
+ * example JSON given in the operator procurement APC specification. Functions u
+ * and m were also removed by hand as unused.
  */
 
 // To parse this data:
 //
-//   import { Convert, Welcome } from "./file";
+//   import { Convert, PartialApc } from "./file";
 //
-//   const welcome = Convert.toWelcome(json);
+//   const partialApc = Convert.toPartialApc(json);
 //
 // These functions will throw an error if the JSON doesn't
 // match the expected interface, even if the JSON is valid.
 
-export interface Welcome {
+export interface PartialApc {
   APC: Apc;
 }
 
@@ -47,12 +48,12 @@ export interface Count {
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
-  public static toWelcome(json: string): Welcome {
-    return cast(JSON.parse(json), r("Welcome"));
+  public static toPartialApc(json: string): PartialApc {
+    return cast(JSON.parse(json), r("PartialApc"));
   }
 
-  public static welcomeToJson(value: Welcome): string {
-    return JSON.stringify(uncast(value, r("Welcome")), null, 2);
+  public static partialApcToJson(value: PartialApc): string {
+    return JSON.stringify(uncast(value, r("PartialApc")), null, 2);
   }
 }
 
@@ -196,7 +197,7 @@ function r(name: string) {
 }
 
 const typeMap: any = {
-  Welcome: o([{ json: "APC", js: "APC", typ: r("Apc") }], false),
+  PartialApc: o([{ json: "APC", js: "APC", typ: r("Apc") }], false),
   Apc: o(
     [
       { json: "schemaVersion", js: "schemaVersion", typ: "" },

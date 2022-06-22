@@ -188,7 +188,7 @@ const initializeMatching = (
         mqttMessage.topic
       );
       if (uniqueVehicleId !== undefined) {
-        let newApc = partialApc.Convert.toWelcome(
+        let newApc = partialApc.Convert.toPartialApc(
           mqttMessage.payload.toString()
         ).APC;
         const eventTimestamp = partialApcMessage.getEventTimestamp();
