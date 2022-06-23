@@ -121,6 +121,7 @@ RUN apt-get update \
   && apt-get -y --no-install-recommends install \
   'ca-certificates' \
   'tini' \
+  'curl' \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/lib/libpulsar.so* /usr/lib/
