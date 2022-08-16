@@ -63,21 +63,23 @@ const transformVehicleCounts = (
 };
 
 /**
- * Consider the quality order as "regular" > "defect" > "other" and select the
- * lower quality of the two. For any unexpected quality, pick "other".
+ * Select the lower of the two quality levels. Consider the quality order as
+ * "regular" > "defect" > "other". For any unexpected quality level, pick
+ * "other".
  */
 export const pickLowerQuality = (
   oldQuality: string,
   newQuality: string
 ): string => {
   let quality = "other";
-  if (
-    oldQuality === "defect" &&
-    (newQuality === "defect" || newQuality === "regular")
+  if (oldQuality === "regular" && newQuality === "regular") {
+    quality = "regular";
+  } else if (
+    (oldQuality === "regular" && newQuality === "defect") ||
+    (oldQuality === "defect" && newQuality === "regular") ||
+    (oldQuality === "defect" && newQuality === "defect")
   ) {
     quality = "defect";
-  } else if (oldQuality === "regular" && newQuality === "regular") {
-    quality = "regular";
   }
   return quality;
 };
