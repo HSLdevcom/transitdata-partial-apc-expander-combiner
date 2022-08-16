@@ -84,7 +84,7 @@ export const pickLowerQuality = (
   return quality;
 };
 
-const sumDoorCounts = (
+export const sumDoorCounts = (
   cachedDoorcounts: partialApc.Doorcount[],
   newDoorcounts: partialApc.Doorcount[]
 ): partialApc.Doorcount[] => {
