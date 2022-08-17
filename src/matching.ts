@@ -8,6 +8,7 @@ import * as partialApc from "./partialApc";
 
 interface ApcCacheItem {
   apc: partialApc.Apc;
+  mqttTopic: string;
   eventTimestamp: number;
 }
 
@@ -152,6 +153,7 @@ const sumApcValues = (
 
 const expandWithApc = (
   hfpData: hfp.Data,
+  mqttTopic: string,
   apcData: partialApc.Apc,
   vehicleCapacity: number
 ): passengerCount.IData => {
@@ -172,6 +174,7 @@ const expandWithApc = (
   };
   const passengerCountData = passengerCount.Data.create({
     SchemaVersion: 1,
+    topic: mqttTopic,
     payload,
   });
   const err = passengerCount.Data.verify(passengerCountData);
@@ -214,6 +217,7 @@ export const initializeMatching = (
         // Prefer the timestamp of the latest partial APC message.
         apcCache.set(uniqueVehicleId, {
           apc: newApc,
+          mqttTopic: mqttMessage.topic,
           eventTimestamp,
         });
       }
@@ -260,6 +264,7 @@ export const initializeMatching = (
                 const vehicleCapacity = getVehicleCapacity(uniqueVehicleId);
                 const passengerCountData = expandWithApc(
                   hfpData,
+                  apcCacheItem.mqttTopic,
                   apcCacheItem.apc,
                   vehicleCapacity
                 );
