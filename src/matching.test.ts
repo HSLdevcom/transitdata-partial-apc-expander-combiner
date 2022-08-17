@@ -1,18 +1,38 @@
 import {
+  getUniqueVehicleIdFromHfpTopic,
   getUniqueVehicleIdFromMqttTopic,
   pickLowerQuality,
   sumDoorCounts,
 } from "./matching";
+import { hfp } from "./protobuf/hfp";
 
-test("Get a unique vehicle ID from a valid MQTT topic", () => {
-  const mqttTopic = "/hfp/v2/journey/ongoing/apc/bus/0022/00758";
-  const uniqueVehicleId = "0022/00758";
-  expect(getUniqueVehicleIdFromMqttTopic(mqttTopic)).toBe(uniqueVehicleId);
-});
+describe("Get unique vehicle IDs", () => {
+  test("Get a unique vehicle ID from a valid MQTT topic", () => {
+    const mqttTopic = "/hfp/v2/journey/ongoing/apc/bus/0022/00758";
+    const uniqueVehicleId = "0022/00758";
+    expect(getUniqueVehicleIdFromMqttTopic(mqttTopic)).toBe(uniqueVehicleId);
+  });
 
-test("Get undefined instead of a unique vehicle ID from an invalid MQTT topic", () => {
-  const mqttTopic = "/hfp/v2/journey/ongoing/foobar/0022/00758";
-  expect(getUniqueVehicleIdFromMqttTopic(mqttTopic)).toBeUndefined();
+  test("Get undefined instead of a unique vehicle ID from an invalid MQTT topic", () => {
+    const mqttTopic = "/hfp/v2/journey/ongoing/foobar/0022/00758";
+    expect(getUniqueVehicleIdFromMqttTopic(mqttTopic)).toBeUndefined();
+  });
+
+  test("Get a unique vehicle ID from a valid HFP topic", () => {
+    const hfpTopic = {
+      SchemaVersion: 1,
+      receivedAt: 123,
+      topicPrefix: "/hfp/",
+      topicVersion: "v2",
+      journeyType: hfp.Topic.JourneyType.journey,
+      temporalType: hfp.Topic.TemporalType.ongoing,
+      operatorId: 22,
+      vehicleNumber: 758,
+      uniqueVehicleId: "22/758",
+    };
+    const uniqueVehicleId = "0022/00758";
+    expect(getUniqueVehicleIdFromHfpTopic(hfpTopic)).toBe(uniqueVehicleId);
+  });
 });
 
 test("Pick the lower quality from two quality levels", () => {
