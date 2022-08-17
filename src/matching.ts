@@ -21,6 +21,16 @@ export const getUniqueVehicleIdFromMqttTopic = (
   return undefined;
 };
 
+export const getUniqueVehicleIdFromHfpTopic = (
+  topic: hfp.ITopic
+): UniqueVehicleId | undefined => {
+  const parts = topic.uniqueVehicleId.split("/");
+  if (parts.length === 2 && parts[0] != null && parts[1] != null) {
+    return `${parts[0].padStart(4, "0")}/${parts[1].padStart(5, "0")}`;
+  }
+  return undefined;
+};
+
 const transformLocToString = (
   locV2: hfp.Payload.LocationQualityMethod
 ): string => {
@@ -222,7 +232,7 @@ const initializeMatching = (
     try {
       const hfpData = hfp.Data.decode(hfpMessage.getData());
       if (hfpData.topic?.temporalType === hfp.Topic.TemporalType.ongoing) {
-        const { uniqueVehicleId } = hfpData.topic;
+        const uniqueVehicleId = getUniqueVehicleIdFromHfpTopic(hfpData.topic);
         if (uniqueVehicleId !== undefined) {
           if (hfpData.topic.journeyType === hfp.Topic.JourneyType.deadrun) {
             apcCache.delete(uniqueVehicleId);
