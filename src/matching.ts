@@ -157,7 +157,7 @@ const expandWithApc = (
   apcData: partialApc.Apc,
   vehicleCapacity: number
 ): passengerCount.IData => {
-  const tst = Math.round(apcData.tst.getTime() / 1000);
+  const tst = Math.floor(apcData.tst.getTime() / 1000);
   const payload: passengerCount.IPayload = {
     ...hfpData.payload,
     ...apcData,
