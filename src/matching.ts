@@ -181,7 +181,7 @@ const expandWithApc = (
   return passengerCountData;
 };
 
-const initializeMatching = (
+export const initializeMatching = (
   logger: pino.Logger,
   {
     apcWaitInSeconds,
@@ -291,5 +291,3 @@ const initializeMatching = (
 
   return { updateApcCache, expandWithApcAndSend };
 };
-
-export default initializeMatching;
