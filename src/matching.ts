@@ -242,12 +242,11 @@ export const initializeMatching = (
             apcCache.delete(uniqueVehicleId);
           } else if (
             hfpData.topic?.eventType != null &&
-            hfpData.topic?.eventType in
-              [
-                hfp.Topic.EventType.PDE,
-                hfp.Topic.EventType.DEP,
-                hfp.Topic.EventType.VJOUT,
-              ]
+            [
+              hfp.Topic.EventType.PDE,
+              hfp.Topic.EventType.DEP,
+              hfp.Topic.EventType.VJOUT,
+            ].includes(hfpData.topic.eventType)
           ) {
             const previousTimeoutId = sendingTimers.get(uniqueVehicleId);
             if (previousTimeoutId !== undefined) {
