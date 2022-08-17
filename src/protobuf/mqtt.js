@@ -130,15 +130,18 @@ export const mqtt = ($root.mqtt = (() => {
       while (reader.pos < end) {
         let tag = reader.uint32();
         switch (tag >>> 3) {
-          case 1:
+          case 1: {
             message.SchemaVersion = reader.int32();
             break;
-          case 2:
+          }
+          case 2: {
             message.topic = reader.string();
             break;
-          case 3:
+          }
+          case 3: {
             message.payload = reader.bytes();
             break;
+          }
           default:
             reader.skipType(tag & 7);
             break;
@@ -215,7 +218,7 @@ export const mqtt = ($root.mqtt = (() => {
             )),
             0
           );
-        else if (object.payload.length) message.payload = object.payload;
+        else if (object.payload.length >= 0) message.payload = object.payload;
       return message;
     };
 
@@ -267,6 +270,21 @@ export const mqtt = ($root.mqtt = (() => {
      */
     RawMessage.prototype.toJSON = function toJSON() {
       return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for RawMessage
+     * @function getTypeUrl
+     * @memberof mqtt.RawMessage
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    RawMessage.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+      if (typeUrlPrefix === undefined) {
+        typeUrlPrefix = "type.googleapis.com";
+      }
+      return typeUrlPrefix + "/mqtt.RawMessage";
     };
 
     return RawMessage;
