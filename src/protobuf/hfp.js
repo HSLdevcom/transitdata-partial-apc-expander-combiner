@@ -132,15 +132,18 @@ export const hfp = ($root.hfp = (() => {
       while (reader.pos < end) {
         let tag = reader.uint32();
         switch (tag >>> 3) {
-          case 1:
+          case 1: {
             message.SchemaVersion = reader.int32();
             break;
-          case 2:
+          }
+          case 2: {
             message.topic = $root.hfp.Topic.decode(reader, reader.uint32());
             break;
-          case 3:
+          }
+          case 3: {
             message.payload = $root.hfp.Payload.decode(reader, reader.uint32());
             break;
+          }
           default:
             reader.skipType(tag & 7);
             break;
@@ -260,6 +263,21 @@ export const hfp = ($root.hfp = (() => {
      */
     Data.prototype.toJSON = function toJSON() {
       return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for Data
+     * @function getTypeUrl
+     * @memberof hfp.Data
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    Data.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+      if (typeUrlPrefix === undefined) {
+        typeUrlPrefix = "type.googleapis.com";
+      }
+      return typeUrlPrefix + "/hfp.Data";
     };
 
     return Data;
@@ -577,63 +595,82 @@ export const hfp = ($root.hfp = (() => {
       while (reader.pos < end) {
         let tag = reader.uint32();
         switch (tag >>> 3) {
-          case 1:
+          case 1: {
             message.SchemaVersion = reader.int32();
             break;
-          case 2:
+          }
+          case 2: {
             message.receivedAt = reader.int64();
             break;
-          case 3:
+          }
+          case 3: {
             message.topicPrefix = reader.string();
             break;
-          case 4:
+          }
+          case 4: {
             message.topicVersion = reader.string();
             break;
-          case 5:
+          }
+          case 5: {
             message.journeyType = reader.int32();
             break;
-          case 6:
+          }
+          case 6: {
             message.temporalType = reader.int32();
             break;
-          case 7:
+          }
+          case 7: {
             message.eventType = reader.int32();
             break;
-          case 8:
+          }
+          case 8: {
             message.transportMode = reader.int32();
             break;
-          case 9:
+          }
+          case 9: {
             message.operatorId = reader.int32();
             break;
-          case 10:
+          }
+          case 10: {
             message.vehicleNumber = reader.int32();
             break;
-          case 11:
+          }
+          case 11: {
             message.uniqueVehicleId = reader.string();
             break;
-          case 12:
+          }
+          case 12: {
             message.routeId = reader.string();
             break;
-          case 13:
+          }
+          case 13: {
             message.directionId = reader.int32();
             break;
-          case 14:
+          }
+          case 14: {
             message.headsign = reader.string();
             break;
-          case 15:
+          }
+          case 15: {
             message.startTime = reader.string();
             break;
-          case 16:
+          }
+          case 16: {
             message.nextStop = reader.string();
             break;
-          case 17:
+          }
+          case 17: {
             message.geohashLevel = reader.int32();
             break;
-          case 18:
+          }
+          case 18: {
             message.latitude = reader.double();
             break;
-          case 19:
+          }
+          case 19: {
             message.longitude = reader.double();
             break;
+          }
           default:
             reader.skipType(tag & 7);
             break;
@@ -1132,6 +1169,21 @@ export const hfp = ($root.hfp = (() => {
      */
     Topic.prototype.toJSON = function toJSON() {
       return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for Topic
+     * @function getTypeUrl
+     * @memberof hfp.Topic
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    Topic.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+      if (typeUrlPrefix === undefined) {
+        typeUrlPrefix = "type.googleapis.com";
+      }
+      return typeUrlPrefix + "/hfp.Topic";
     };
 
     /**
@@ -1818,129 +1870,170 @@ export const hfp = ($root.hfp = (() => {
       while (reader.pos < end) {
         let tag = reader.uint32();
         switch (tag >>> 3) {
-          case 1:
+          case 1: {
             message.SchemaVersion = reader.int32();
             break;
-          case 2:
+          }
+          case 2: {
             message.desi = reader.string();
             break;
-          case 3:
+          }
+          case 3: {
             message.dir = reader.string();
             break;
-          case 4:
+          }
+          case 4: {
             message.oper = reader.int32();
             break;
-          case 5:
+          }
+          case 5: {
             message.veh = reader.int32();
             break;
-          case 6:
+          }
+          case 6: {
             message.tst = reader.string();
             break;
-          case 7:
+          }
+          case 7: {
             message.tsi = reader.int64();
             break;
-          case 8:
+          }
+          case 8: {
             message.spd = reader.double();
             break;
-          case 9:
+          }
+          case 9: {
             message.hdg = reader.int32();
             break;
-          case 10:
+          }
+          case 10: {
             message.lat = reader.double();
             break;
-          case 11:
+          }
+          case 11: {
             message.long = reader.double();
             break;
-          case 12:
+          }
+          case 12: {
             message.acc = reader.double();
             break;
-          case 13:
+          }
+          case 13: {
             message.dl = reader.uint32();
             break;
-          case 14:
+          }
+          case 14: {
             message.odo = reader.double();
             break;
-          case 15:
+          }
+          case 15: {
             message.drst = reader.uint32();
             break;
-          case 16:
+          }
+          case 16: {
             message.oday = reader.string();
             break;
-          case 17:
+          }
+          case 17: {
             message.jrn = reader.int32();
             break;
-          case 18:
+          }
+          case 18: {
             message.line = reader.int32();
             break;
-          case 19:
+          }
+          case 19: {
             message.start = reader.string();
             break;
-          case 20:
+          }
+          case 20: {
             message.loc = reader.int32();
             break;
-          case 21:
+          }
+          case 21: {
             message.stop = reader.int32();
             break;
-          case 22:
+          }
+          case 22: {
             message.route = reader.string();
             break;
-          case 23:
+          }
+          case 23: {
             message.occu = reader.int32();
             break;
-          case 24:
+          }
+          case 24: {
             message.seq = reader.int32();
             break;
-          case 25:
+          }
+          case 25: {
             message.ttarr = reader.string();
             break;
-          case 26:
+          }
+          case 26: {
             message.ttdep = reader.string();
             break;
-          case 27:
+          }
+          case 27: {
             message.drType = reader.int32();
             break;
-          case 28:
+          }
+          case 28: {
             message.tlpRequestid = reader.int32();
             break;
-          case 29:
+          }
+          case 29: {
             message.tlpRequesttype = reader.int32();
             break;
-          case 30:
+          }
+          case 30: {
             message.tlpPrioritylevel = reader.int32();
             break;
-          case 31:
+          }
+          case 31: {
             message.tlpReason = reader.int32();
             break;
-          case 32:
+          }
+          case 32: {
             message.tlpAttSeq = reader.int32();
             break;
-          case 33:
+          }
+          case 33: {
             message.tlpDecision = reader.int32();
             break;
-          case 34:
+          }
+          case 34: {
             message.sid = reader.int32();
             break;
-          case 35:
+          }
+          case 35: {
             message.signalGroupid = reader.int32();
             break;
-          case 36:
+          }
+          case 36: {
             message.tlpSignalgroupnbr = reader.int32();
             break;
-          case 38:
+          }
+          case 38: {
             message.tlpLineConfigid = reader.int32();
             break;
-          case 39:
+          }
+          case 39: {
             message.tlpPointConfigid = reader.int32();
             break;
-          case 40:
+          }
+          case 40: {
             message.tlpFrequency = reader.int32();
             break;
-          case 41:
+          }
+          case 41: {
             message.tlpProtocol = reader.string();
             break;
-          case 42:
+          }
+          case 42: {
             message.label = reader.string();
             break;
+          }
           default:
             reader.skipType(tag & 7);
             break;
@@ -2519,6 +2612,21 @@ export const hfp = ($root.hfp = (() => {
      */
     Payload.prototype.toJSON = function toJSON() {
       return this.constructor.toObject(this, $protobuf.util.toJSONOptions);
+    };
+
+    /**
+     * Gets the default type url for Payload
+     * @function getTypeUrl
+     * @memberof hfp.Payload
+     * @static
+     * @param {string} [typeUrlPrefix] your custom typeUrlPrefix(default "type.googleapis.com")
+     * @returns {string} The default type url
+     */
+    Payload.getTypeUrl = function getTypeUrl(typeUrlPrefix) {
+      if (typeUrlPrefix === undefined) {
+        typeUrlPrefix = "type.googleapis.com";
+      }
+      return typeUrlPrefix + "/hfp.Payload";
     };
 
     /**
