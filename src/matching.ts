@@ -172,6 +172,9 @@ const expandWithApc = (
       apcData.vehiclecounts,
       vehicleCapacity
     ),
+    // Override the field oper of the partial APC data as the APC devices likely
+    // do not have access to the correct value.
+    ...(hfpData.payload.oper == null ? {} : { oper: hfpData.payload.oper }),
   };
   const passengerCountData = passengerCount.Data.create({
     SchemaVersion: 1,
