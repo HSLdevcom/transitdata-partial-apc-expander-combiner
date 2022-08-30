@@ -211,31 +211,43 @@ export const initializeMatching = (
       );
       if (uniqueVehicleId !== undefined) {
         const payloadString = mqttMessage.payload.toString();
-        let newApc;
         try {
-          newApc = partialApc.Convert.toPartialApc(payloadString).APC;
-        } catch (errConvertPartialApc) {
+          let newApc;
+          try {
+            newApc = partialApc.Convert.toPartialApc(payloadString).APC;
+          } catch (errConvertPartialApc) {
+            logger.warn(
+              { err: errConvertPartialApc },
+              "Received message did not match the expected partial APC JSON structure. Trying peeled partial APC JSON structure, instead."
+            );
+            newApc = peeledPartialApc.Convert.toPeeledPartialApc(payloadString);
+          }
+          const eventTimestamp = partialApcMessage.getEventTimestamp();
+          const existingApcCacheItem = apcCache.get(uniqueVehicleId);
+          if (existingApcCacheItem !== undefined) {
+            newApc = sumApcValues(existingApcCacheItem.apc, newApc);
+          }
+          // Prefer the timestamp of the latest partial APC message.
+          apcCache.set(uniqueVehicleId, {
+            apc: newApc,
+            mqttTopic: mqttMessage.topic,
+            eventTimestamp,
+          });
+        } catch (errConvertPeeledPartialApc) {
           logger.warn(
-            { err: errConvertPartialApc },
-            "Received message did not match the expected partial APC JSON structure. Trying peeled partial APC JSON structure, instead."
+            { err: errConvertPeeledPartialApc, mqttPayload: payloadString },
+            "Received message did not match the peeled partial APC JSON structure, either"
           );
-          newApc = peeledPartialApc.Convert.toPeeledPartialApc(payloadString);
         }
-        const eventTimestamp = partialApcMessage.getEventTimestamp();
-        const existingApcCacheItem = apcCache.get(uniqueVehicleId);
-        if (existingApcCacheItem !== undefined) {
-          newApc = sumApcValues(existingApcCacheItem.apc, newApc);
-        }
-        // Prefer the timestamp of the latest partial APC message.
-        apcCache.set(uniqueVehicleId, {
-          apc: newApc,
-          mqttTopic: mqttMessage.topic,
-          eventTimestamp,
-        });
+      } else {
+        logger.warn(
+          { mqttTopic: mqttMessage.topic },
+          "Could not extract unique vehicle ID from MQTT topic"
+        );
       }
     } catch (err) {
       logger.warn(
-        { err, partialApcMessage },
+        { err, partialApcMessage: JSON.stringify(partialApcMessage) },
         "Something unexpected happened with partialApcMessage"
       );
     }
