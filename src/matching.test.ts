@@ -503,9 +503,9 @@ describe("Cache and trigger sending", () => {
     );
     const lastPartialApcTst = new Date("2022-08-30T13:20:44Z");
     const peeledPartialApcMessage = mockPartialApcMessage({
-      content: JSON.parse(
+      content: peeledPartialApc.Convert.toPeeledPartialApc(
         '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}'
-      ) as PeeledPartialApc,
+      ),
       mqttTopic: "/hfp/v2/journey/ongoing/apc/bus/0018/00817",
       eventTimestamp: 1660731500000,
     });
