@@ -1,7 +1,7 @@
 /**
- * Generated manually with https://app.quicktype.io/ on 2022-06-22 using the
- * example JSON given in the operator procurement APC specification. Functions u
- * and m were also removed by hand as unused.
+ * Generated manually with https://app.quicktype.io/ on 2022-09-01 using
+ * anonymized, corrected partial APC JSON data. Function m was also removed
+ * manually * as unused.
  */
 
 // To parse this data:
@@ -18,20 +18,18 @@ export interface PartialApc {
 }
 
 export interface Apc {
-  schemaVersion: string;
-  oper: number;
-  veh: number;
-  messageId: string;
   tst: Date;
   lat: number;
   long: number;
   vehiclecounts: Vehiclecounts;
+  schemaVersion: string;
+  messageId: string;
 }
 
 export interface Vehiclecounts {
-  countquality: string;
   vehicleload: number;
   doorcounts: Doorcount[];
+  countquality: string;
 }
 
 export interface Doorcount {
@@ -200,22 +198,20 @@ const typeMap: any = {
   PartialApc: o([{ json: "APC", js: "APC", typ: r("Apc") }], false),
   Apc: o(
     [
-      { json: "schemaVersion", js: "schemaVersion", typ: "" },
-      { json: "oper", js: "oper", typ: 0 },
-      { json: "veh", js: "veh", typ: 0 },
-      { json: "messageId", js: "messageId", typ: "" },
       { json: "tst", js: "tst", typ: Date },
       { json: "lat", js: "lat", typ: 3.14 },
       { json: "long", js: "long", typ: 3.14 },
       { json: "vehiclecounts", js: "vehiclecounts", typ: r("Vehiclecounts") },
+      { json: "schemaVersion", js: "schemaVersion", typ: "" },
+      { json: "messageId", js: "messageId", typ: "" },
     ],
     false
   ),
   Vehiclecounts: o(
     [
-      { json: "countquality", js: "countquality", typ: "" },
       { json: "vehicleload", js: "vehicleload", typ: 0 },
       { json: "doorcounts", js: "doorcounts", typ: a(r("Doorcount")) },
+      { json: "countquality", js: "countquality", typ: "" },
     ],
     false
   ),
