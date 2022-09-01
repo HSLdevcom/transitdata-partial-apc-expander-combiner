@@ -7,8 +7,8 @@ import {
   pickLowerQuality,
   sumDoorCounts,
 } from "./matching";
-import type * as partialApc from "./partialApc";
-import type { PeeledPartialApc } from "./peeledPartialApc";
+import * as partialApc from "./partialApc";
+import * as peeledPartialApc from "./peeledPartialApc";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
@@ -39,6 +39,29 @@ describe("Get unique vehicle IDs", () => {
     };
     const uniqueVehicleId = "0022/00758";
     expect(getUniqueVehicleIdFromHfpTopic(hfpTopic)).toBe(uniqueVehicleId);
+  });
+});
+
+describe("Convert anonymized data", () => {
+  const convertToPartial = (s: string): partialApc.PartialApc =>
+    partialApc.Convert.toPartialApc(s);
+  const convertToPeeled = (s: string): peeledPartialApc.PeeledPartialApc =>
+    peeledPartialApc.Convert.toPeeledPartialApc(s);
+
+  describe("partialApc", () => {
+    test("First fixed data example", () => {
+      const mqttPayload =
+        '{"APC":{"tst":"2022-07-05T09:10:40.123Z","lat":55.55517,"long":12.918473,"vehiclecounts":{"vehicleload":3,"doorcounts":[{"door":"door1","count":[{"class":"adult","in":1,"out":0}]},{"door":"door2","count":[{"class":"adult","in":0,"out":0}]},{"door":"door3","count":[{"class":"adult","in":0,"out":2}]}],"countquality":"regular"},"schemaVersion":"1-1-0","messageId":"05093457020702856023487297fe2b28"}}';
+      expect(() => convertToPartial(mqttPayload)).not.toThrow();
+    });
+  });
+
+  describe("peeledPartialApc", () => {
+    test("First spec-violating example", () => {
+      const mqttPayload =
+        '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}';
+      expect(() => convertToPeeled(mqttPayload)).not.toThrow();
+    });
   });
 });
 
@@ -197,7 +220,7 @@ const mockPartialApcMessage = ({
   mqttTopic,
   eventTimestamp,
 }: {
-  content: partialApc.PartialApc | PeeledPartialApc;
+  content: partialApc.PartialApc | peeledPartialApc.PeeledPartialApc;
   mqttTopic: string;
   eventTimestamp: number;
 }): Pulsar.Message => {
@@ -277,8 +300,6 @@ describe("Cache and trigger sending", () => {
       content: {
         APC: {
           schemaVersion: "1-1-0",
-          oper: 22,
-          veh: 758,
           messageId: "06e64ba5-e555-4e2f-b8b4-b57bc69e8b99",
           tst: new Date("2022-08-15T10:57:08.647Z"),
           lat: 60.1967,
@@ -310,8 +331,6 @@ describe("Cache and trigger sending", () => {
       content: {
         APC: {
           schemaVersion: "1-1-0",
-          oper: 22,
-          veh: 758,
           messageId: "06e64ba5-e555-4e2f-b8b4-b97bc69e8b99",
           tst: lastPartialApcTst,
           lat: 60.1968,
