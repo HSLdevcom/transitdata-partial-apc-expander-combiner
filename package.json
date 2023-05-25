@@ -1,6 +1,6 @@
 {
   "name": "transitdata-partial-apc-expander-combiner",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Expand partial APC messages with trip metadata and combine them by stops to create full APC messages",
   "main": "dist/index.js",
   "scripts": {
