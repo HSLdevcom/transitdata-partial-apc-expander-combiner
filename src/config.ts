@@ -22,10 +22,15 @@ export interface HealthCheckConfig {
   port: number;
 }
 
+export interface DatabaseConfig {
+  connectionString: string;
+}
+
 export interface Config {
   processing: ProcessingConfig;
   pulsar: PulsarConfig;
   healthCheck: HealthCheckConfig;
+  database: DatabaseConfig;
 }
 
 const getRequired = (envVariable: string) => {
@@ -214,8 +219,14 @@ const getHealthCheckConfig = () => {
   return { port };
 };
 
+const getDatabaseConfig = () => {
+  const connectionString = getRequired("DATABASE_CONNECTION_URI")
+  return { connectionString }
+}
+
 export const getConfig = (logger: pino.Logger): Config => ({
   processing: getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
+  database: getDatabaseConfig()
 });
