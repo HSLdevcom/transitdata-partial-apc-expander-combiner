@@ -1,4 +1,5 @@
 import * as $protobuf from "protobufjs";
+import Long = require("long");
 /** Namespace hfp. */
 export namespace hfp {
   /** Properties of a Data. */

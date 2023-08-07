@@ -1,4 +1,5 @@
 import * as $protobuf from "protobufjs";
+import Long = require("long");
 /** Namespace passengerCount. */
 export namespace passengerCount {
   /** Properties of a Data. */
