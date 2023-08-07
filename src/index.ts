@@ -9,6 +9,7 @@ import {
   createPulsarConsumer,
 } from "./pulsar";
 import transformUnknownToError from "./util";
+require('dotenv').config()
 
 /**
  * Exit gracefully.
