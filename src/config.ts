@@ -1,5 +1,7 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
+import capabilities from "./generateVehicleCapabilities";
+require('dotenv').config()
 
 export type UniqueVehicleId = string;
 
@@ -35,9 +37,25 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
+  console.log("VARIABLE", variable);
   if (variable === undefined) {
     throw new Error(`${envVariable} must be defined`);
   }
+  return variable;
+};
+
+const getCapacities = async () => {
+  const envVariable = "VEHICLE_CAPACITIES";
+  const variable = process.env[envVariable];
+  console.log("VARIABLE:", variable);
+
+  if (variable === undefined) {
+    throw new Error(`${envVariable} must be defined`);
+  }
+
+  const test = await capabilities();
+  console.log("CAPABILITIES:", test)
+
   return variable;
 };
 
@@ -73,11 +91,11 @@ const getOptionalFiniteFloatWithDefault = (
   return result;
 };
 
-const getVehicleCapacities = (): VehicleCapacityMap => {
+const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
   const envVariable = "VEHICLE_CAPACITIES";
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const parsed = JSON.parse(getRequired(envVariable)) as [string, number][];
+  const parsed = JSON.parse(await getCapacities()) as [string, number][];
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   const map: VehicleCapacityMap = new Map(parsed);
@@ -106,13 +124,23 @@ const getVehicleCapacities = (): VehicleCapacityMap => {
   }
   return map;
 };
+/*
+const getCreeting = () => {
+  return "Foo bar";
+}
+*/
+(async () => {
+  const test = await getVehicleCapacities()
+  console.log("TEST", test)
+})()
 
-const getProcessingConfig = (): ProcessingConfig => {
+
+const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
     "APC_WAIT_IN_SECONDS",
     6
   );
-  const vehicleCapacities = getVehicleCapacities();
+  const vehicleCapacities = await getVehicleCapacities();
   const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
     "DEFAULT_VEHICLE_CAPACITY",
     78
@@ -224,8 +252,8 @@ const getDatabaseConfig = () => {
   return { connectionString }
 }
 
-export const getConfig = (logger: pino.Logger): Config => ({
-  processing: getProcessingConfig(),
+export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+  processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
   database: getDatabaseConfig()
