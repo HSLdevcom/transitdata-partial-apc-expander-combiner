@@ -44,21 +44,6 @@ const getRequired = (envVariable: string) => {
   return variable;
 };
 
-const getCapacities = async () => {
-  const envVariable = "VEHICLE_CAPACITIES";
-  const variable = process.env[envVariable];
-  console.log("VARIABLE:", variable);
-
-  if (variable === undefined) {
-    throw new Error(`${envVariable} must be defined`);
-  }
-
-  const test = await capabilities();
-  console.log("CAPABILITIES:", test)
-
-  return variable;
-};
-
 const getOptional = (envVariable: string) => process.env[envVariable];
 
 const getOptionalBooleanWithDefault = (
@@ -92,21 +77,12 @@ const getOptionalFiniteFloatWithDefault = (
 };
 
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
-  const envVariable = "VEHICLE_CAPACITIES";
-  // Check the contents below. Crashing here is fine, too.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const parsed = JSON.parse(await getCapacities()) as [string, number][];
+  const map = await capabilities();
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const map: VehicleCapacityMap = new Map(parsed);
-  if (map.size !== parsed.length) {
-    throw new Error(
-      `${envVariable} has ${parsed.length - map.size} repeated vehicles.`
-    );
-  }
   if (map.size < 1) {
     throw new Error(
-      `${envVariable} must have at least one entries() pair in the form of a stringified JSON array of arrays.`
+      `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`
     );
   }
   if (
@@ -119,21 +95,16 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
     )
   ) {
     throw new Error(
-      `${envVariable} must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
+      `Capacities map must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
     );
   }
   return map;
 };
-/*
-const getCreeting = () => {
-  return "Foo bar";
-}
-*/
+
 (async () => {
   const test = await getVehicleCapacities()
   console.log("TEST", test)
 })()
-
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
