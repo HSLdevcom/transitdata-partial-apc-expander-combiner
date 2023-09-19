@@ -26,7 +26,7 @@ const getCapacities = async () => {
     let capabilitiesMap: Map<string, number> = new Map();
   
     capabilitiesList.forEach((capability) => {
-      const mapKey: string = (capability.operator_id + "/" + capability.vehicle_id);
+      const mapKey: string = (capability.operator_id + "/" + capability.vehicle_id.padStart(5, "0"));
       const capacity: number | undefined = capacitiesByVehicleclass.get(capability.type);
       const mapValue: number = capacity === undefined ? DEFAULT_CAPACITY : capacity;
       capabilitiesMap.set(mapKey, mapValue);

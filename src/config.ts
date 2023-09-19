@@ -102,8 +102,13 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
 };
 
 (async () => {
-  const test = await getVehicleCapacities()
-  console.log("TEST", test)
+  const capacities = await getVehicleCapacities();
+  console.log("CAPACITIES SIZE:", capacities.size);
+  console.log("FOR EXAMPLE:");
+  console.log("0022/00979", capacities.get("0022/00979"));
+  console.log("0018/00887", capacities.get("0018/00887"));
+  console.log("0022/00945", capacities.get("0022/00945"));
+  
 })()
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
