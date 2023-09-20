@@ -1,11 +1,7 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
-import capabilities from "./generateVehicleCapabilities";
+import capabilities, { VehicleCapacityMap } from "./generateVehicleCapabilities";
 require('dotenv').config()
-
-export type UniqueVehicleId = string;
-
-export type VehicleCapacityMap = Map<UniqueVehicleId, number>;
 
 export interface ProcessingConfig {
   apcWaitInSeconds: number;

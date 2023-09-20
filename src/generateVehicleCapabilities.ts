@@ -4,8 +4,10 @@ require('dotenv').config()
 const DEFAULT_CAPACITY: number = 78;
 
 export type VehicleType = string;
+export type UniqueVehicleId = string;
 
 export type VehicleTypeCapacityMap = Map<VehicleType, number>;
+export type VehicleCapacityMap = Map<UniqueVehicleId, number>;
 
 interface Vehicle {
     vehicle_id: string;
@@ -13,7 +15,7 @@ interface Vehicle {
     type: string;
 }
 
-function getUniqueVehicleId(capability: Vehicle): string {
+function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
     return (capability.operator_id + "/" + capability.vehicle_id.padStart(5, "0"));
 }
 
@@ -23,7 +25,7 @@ const getEquipmentFromDatabase = async (): Promise<Vehicle[]> => {
 
 const getCapacities = async () => {
     const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase();
-    let capabilitiesMap: Map<string, number> = new Map();
+    let capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
 
     const capacitiesByVehicleTypeJson = JSON.parse(process.env['CAPACITIES_BY_VEHICLE_TYPE']!) as [string, number][];
     const capacitiesByVehicleType: VehicleTypeCapacityMap = new Map(capacitiesByVehicleTypeJson);
