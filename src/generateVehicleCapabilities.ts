@@ -1,13 +1,11 @@
 import type { DatabaseConfig, VehicleTypeConfig } from "./config";
 import db from "./db";
 
-const DEFAULT_CAPACITY = 78;
-
 export type VehicleType = string;
 export type UniqueVehicleId = string;
 
 export type VehicleTypeCapacityMap = Map<VehicleType, number>;
-export type VehicleCapacityMap = Map<UniqueVehicleId, number>;
+export type VehicleCapacityMap = Map<UniqueVehicleId, number | undefined>;
 
 interface Vehicle {
   vehicle_id: string;
@@ -34,7 +32,7 @@ const getCapacities = async (
   const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase(
     databaseConfig
   );
-  const capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
+  const capabilitiesMap: Map<UniqueVehicleId, number | undefined> = new Map();
 
   const capacitiesByVehicleTypeJson = JSON.parse(
     vehicleTypeConfig.vehicleTypes
@@ -48,8 +46,7 @@ const getCapacities = async (
     const capacity: number | undefined = capacitiesByVehicleType.get(
       capability.type
     );
-    const mapValue: number =
-      capacity === undefined ? DEFAULT_CAPACITY : capacity;
+    const mapValue: number | undefined = capacity;
     capabilitiesMap.set(mapKey, mapValue);
   });
 

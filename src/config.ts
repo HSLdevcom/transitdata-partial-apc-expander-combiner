@@ -187,17 +187,25 @@ const getVehicleTypeConfig = () => {
   return { vehicleTypes };
 };
 
+const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault("DEFAULT_VEHICLE_CAPACITY", 78);
+
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
-  const map = await capabilities(getDatabaseConfig(), getVehicleTypeConfig());
+  const capabilitiesMap: Map<string, number | undefined> = 
+    await capabilities(getDatabaseConfig(), getVehicleTypeConfig());
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  if (map.size < 1) {
+  if (capabilitiesMap.size < 1) {
     throw new Error(
       `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`
     );
   }
+  for await (const uniqueVehicleId of capabilitiesMap.keys()) {
+    if (!capabilitiesMap.get(uniqueVehicleId)) {
+      capabilitiesMap.set(uniqueVehicleId, defaultVehicleCapacity)
+    }
+  }
   if (
-    Array.from(map.entries()).some(
+    Array.from(capabilitiesMap.entries()).some(
       ([vehicle, capacity]) =>
         typeof vehicle !== "string" ||
         typeof capacity !== "number" ||
@@ -209,7 +217,7 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
       `Capacities map must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
     );
   }
-  return map;
+  return capabilitiesMap;
 };
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
