@@ -229,6 +229,6 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: await getDatabaseConfig(),
   vehicleType: await getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
-  pulsar: getPulsarConfig(logger),
-  healthCheck: getHealthCheckConfig()
+  pulsar: await getPulsarConfig(logger),
+  healthCheck: await getHealthCheckConfig()
 });

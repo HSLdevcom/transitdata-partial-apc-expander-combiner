@@ -151,7 +151,7 @@ const exitGracefully = async (
       process.on("SIGTERM", (signal) => exitHandler(143, new Error(signal)));
 
       logger.info("Read configuration");
-      const config = getConfig(logger);
+      const config = await getConfig(logger);
       logger.info("Create Pulsar client");
       client = createPulsarClient(config.pulsar);
       logger.info("Create Pulsar producer");
