@@ -41,10 +41,4 @@ const getCapacities = async (databaseConfig: DatabaseConfig, vehicleTypeConfig: 
     return capabilitiesMap;
   };
 
-/*
-(async () => {
-    const test = await getEquipmentFromDatabase()
-    console.log("EQUIPMENT:", test)
-})()
-*/
 export default getCapacities

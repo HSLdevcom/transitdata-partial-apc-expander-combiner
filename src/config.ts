@@ -38,7 +38,6 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
-  console.log("VARIABLE", variable);
   if (variable === undefined) {
     throw new Error(`${envVariable} must be defined`);
   }
@@ -101,16 +100,6 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
   }
   return map;
 };
-
-(async () => {
-  const capacities = await getVehicleCapacities();
-  console.log("CAPACITIES SIZE:", capacities.size);
-  console.log("FOR EXAMPLE:");
-  console.log("0022/00979", capacities.get("0022/00979"));
-  console.log("0018/00887", capacities.get("0018/00887"));
-  console.log("0022/00945", capacities.get("0022/00945"));
-  
-})()
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
