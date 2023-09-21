@@ -3,6 +3,8 @@ import Pulsar from "pulsar-client";
 import capabilities, { VehicleCapacityMap } from "./generateVehicleCapabilities";
 require('dotenv').config()
 
+export type UniqueVehicleId = string;
+
 export interface ProcessingConfig {
   apcWaitInSeconds: number;
   vehicleCapacities: VehicleCapacityMap;
