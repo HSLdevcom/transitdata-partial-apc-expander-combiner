@@ -230,5 +230,4 @@ const typeMap: any = {
     ],
     false
   ),
-
 };

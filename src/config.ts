@@ -1,7 +1,9 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
-import capabilities, { VehicleCapacityMap } from "./generateVehicleCapabilities";
-require('dotenv').config()
+import capabilities, {
+  VehicleCapacityMap,
+} from "./generateVehicleCapabilities";
+require("dotenv").config();
 
 export type UniqueVehicleId = string;
 
@@ -216,19 +218,19 @@ const getHealthCheckConfig = () => {
 };
 
 const getDatabaseConfig = () => {
-  const connectionString = getRequired("DATABASE_CONNECTION_URI")
-  return { connectionString }
-}
+  const connectionString = getRequired("DATABASE_CONNECTION_URI");
+  return { connectionString };
+};
 
 const getVehicleTypeConfig = () => {
   const vehicleType = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
   return { vehicleType };
-}
+};
 
 export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: await getDatabaseConfig(),
   vehicleType: await getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
   pulsar: await getPulsarConfig(logger),
-  healthCheck: await getHealthCheckConfig()
+  healthCheck: await getHealthCheckConfig(),
 });
