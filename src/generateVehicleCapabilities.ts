@@ -37,7 +37,7 @@ const getCapacities = async (
   const capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
 
   const capacitiesByVehicleTypeJson = JSON.parse(
-    vehicleTypeConfig.vehicleType
+    vehicleTypeConfig.vehicleTypes
   ) as [string, number][];
   const capacitiesByVehicleType: VehicleTypeCapacityMap = new Map(
     capacitiesByVehicleTypeJson

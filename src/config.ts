@@ -31,7 +31,7 @@ export interface DatabaseConfig {
 }
 
 export interface VehicleTypeConfig {
-  vehicleType: string;
+  vehicleTypes: string;
 }
 
 export interface Config {
@@ -39,7 +39,7 @@ export interface Config {
   pulsar: PulsarConfig;
   healthCheck: HealthCheckConfig;
   database: DatabaseConfig;
-  vehicleType: VehicleTypeConfig;
+  vehicleTypes: VehicleTypeConfig;
 }
 
 const getRequired = (envVariable: string) => {
@@ -183,8 +183,8 @@ const getDatabaseConfig = () => {
 };
 
 const getVehicleTypeConfig = () => {
-  const vehicleType = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
-  return { vehicleType };
+  const vehicleTypes = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
+  return { vehicleTypes };
 };
 
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
@@ -231,7 +231,7 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
 
 export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: getDatabaseConfig(),
-  vehicleType: getVehicleTypeConfig(),
+  vehicleTypes: getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
