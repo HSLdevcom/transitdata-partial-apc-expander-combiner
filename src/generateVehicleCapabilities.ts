@@ -1,8 +1,7 @@
 import type { DatabaseConfig, VehicleTypeConfig } from "./config";
 import db from "./db";
-require("dotenv").config();
 
-const DEFAULT_CAPACITY: number = 78;
+const DEFAULT_CAPACITY = 78;
 
 export type VehicleType = string;
 export type UniqueVehicleId = string;
@@ -17,7 +16,7 @@ interface Vehicle {
 }
 
 function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
-  return capability.operator_id + "/" + capability.vehicle_id.padStart(5, "0");
+  return `${capability.operator_id}/${capability.vehicle_id.padStart(5, "0")}`;
 }
 
 const getEquipmentFromDatabase = async (
@@ -35,7 +34,7 @@ const getCapacities = async (
   const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase(
     databaseConfig
   );
-  let capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
+  const capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
 
   const capacitiesByVehicleTypeJson = JSON.parse(
     vehicleTypeConfig.vehicleType

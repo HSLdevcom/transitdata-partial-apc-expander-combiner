@@ -1,5 +1,6 @@
 import pino from "pino";
 import type Pulsar from "pulsar-client";
+import dotenv = require("dotenv");
 import { getConfig } from "./config";
 import createHealthCheckServer from "./healthCheck";
 import keepProcessingMessages from "./messageProcessing";
@@ -9,7 +10,8 @@ import {
   createPulsarConsumer,
 } from "./pulsar";
 import transformUnknownToError from "./util";
-require("dotenv").config();
+
+dotenv.config();
 
 /**
  * Exit gracefully.
