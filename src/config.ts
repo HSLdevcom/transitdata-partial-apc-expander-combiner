@@ -24,11 +24,16 @@ export interface DatabaseConfig {
   connectionString: string;
 }
 
+export interface VehicleTypeConfig {
+  vehicleType: string;
+}
+
 export interface Config {
   processing: ProcessingConfig;
   pulsar: PulsarConfig;
   healthCheck: HealthCheckConfig;
   database: DatabaseConfig;
+  vehicleType: VehicleTypeConfig;
 }
 
 const getRequired = (envVariable: string) => {
@@ -73,7 +78,7 @@ const getOptionalFiniteFloatWithDefault = (
 };
 
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
-  const map = await capabilities();
+  const map = await capabilities(getDatabaseConfig(), getVehicleTypeConfig());
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   if (map.size < 1) {
@@ -224,9 +229,15 @@ const getDatabaseConfig = () => {
   return { connectionString }
 }
 
+const getVehicleTypeConfig = () => {
+  const vehicleType = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
+  return { vehicleType };
+}
+
 export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+  database: await getDatabaseConfig(),
+  vehicleType: await getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
-  healthCheck: getHealthCheckConfig(),
-  database: getDatabaseConfig()
+  healthCheck: getHealthCheckConfig()
 });

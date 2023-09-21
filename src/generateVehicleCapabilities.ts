@@ -1,3 +1,4 @@
+import type { DatabaseConfig, VehicleTypeConfig } from './config';
 import db from './db'
 require('dotenv').config()
 
@@ -19,15 +20,15 @@ function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
     return (capability.operator_id + "/" + capability.vehicle_id.padStart(5, "0"));
 }
 
-const getEquipmentFromDatabase = async (): Promise<Vehicle[]> => {
-    return db(process.env['DATABASE_CONNECTION_URI']!).many('SELECT vehicle_id, operator_id, type FROM equipment')
+const getEquipmentFromDatabase = async (databaseConfig: DatabaseConfig): Promise<Vehicle[]> => {
+    return db(databaseConfig.connectionString).many('SELECT vehicle_id, operator_id, type FROM equipment')
 }
 
-const getCapacities = async () => {
-    const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase();
+const getCapacities = async (databaseConfig: DatabaseConfig, vehicleTypeConfig: VehicleTypeConfig) => {
+    const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase(databaseConfig);
     let capabilitiesMap: Map<UniqueVehicleId, number> = new Map();
 
-    const capacitiesByVehicleTypeJson = JSON.parse(process.env['CAPACITIES_BY_VEHICLE_TYPE']!) as [string, number][];
+    const capacitiesByVehicleTypeJson = JSON.parse(vehicleTypeConfig.vehicleType) as [string, number][];
     const capacitiesByVehicleType: VehicleTypeCapacityMap = new Map(capacitiesByVehicleTypeJson);
     
     capabilitiesList.forEach((capability) => {
