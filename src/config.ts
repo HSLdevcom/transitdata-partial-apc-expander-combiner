@@ -187,11 +187,16 @@ const getVehicleTypeConfig = () => {
   return { vehicleTypes };
 };
 
-const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault("DEFAULT_VEHICLE_CAPACITY", 78);
+const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
+  "DEFAULT_VEHICLE_CAPACITY",
+  78
+);
 
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
-  const capabilitiesMap: Map<string, number | undefined> = 
-    await capabilities(getDatabaseConfig(), getVehicleTypeConfig());
+  const capabilitiesMap: Map<string, number | undefined> = await capabilities(
+    getDatabaseConfig(),
+    getVehicleTypeConfig()
+  );
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   if (capabilitiesMap.size < 1) {
@@ -201,7 +206,7 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
   }
   for await (const uniqueVehicleId of capabilitiesMap.keys()) {
     if (!capabilitiesMap.get(uniqueVehicleId)) {
-      capabilitiesMap.set(uniqueVehicleId, defaultVehicleCapacity)
+      capabilitiesMap.set(uniqueVehicleId, defaultVehicleCapacity);
     }
   }
   if (
