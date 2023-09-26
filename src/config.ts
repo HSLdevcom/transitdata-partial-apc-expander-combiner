@@ -204,11 +204,13 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
       `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`
     );
   }
-  for await (const uniqueVehicleId of capabilitiesMap.keys()) {
+
+  Array.from(capabilitiesMap.keys()).forEach((uniqueVehicleId) => {
     if (!capabilitiesMap.get(uniqueVehicleId)) {
       capabilitiesMap.set(uniqueVehicleId, defaultVehicleCapacity);
     }
-  }
+  });
+
   if (
     Array.from(capabilitiesMap.entries()).some(
       ([vehicle, capacity]) =>
@@ -231,10 +233,6 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
     6
   );
   const vehicleCapacities = await getVehicleCapacities();
-  const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
-    "DEFAULT_VEHICLE_CAPACITY",
-    78
-  );
   return {
     apcWaitInSeconds,
     vehicleCapacities,
