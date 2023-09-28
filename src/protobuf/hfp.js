@@ -878,6 +878,12 @@ export const hfp = ($root.hfp = (() => {
       if (object.topicVersion != null)
         message.topicVersion = String(object.topicVersion);
       switch (object.journeyType) {
+        default:
+          if (typeof object.journeyType === "number") {
+            message.journeyType = object.journeyType;
+            break;
+          }
+          break;
         case "journey":
         case 0:
           message.journeyType = 0;
@@ -892,6 +898,12 @@ export const hfp = ($root.hfp = (() => {
           break;
       }
       switch (object.temporalType) {
+        default:
+          if (typeof object.temporalType === "number") {
+            message.temporalType = object.temporalType;
+            break;
+          }
+          break;
         case "ongoing":
         case 0:
           message.temporalType = 0;
@@ -902,6 +914,12 @@ export const hfp = ($root.hfp = (() => {
           break;
       }
       switch (object.eventType) {
+        default:
+          if (typeof object.eventType === "number") {
+            message.eventType = object.eventType;
+            break;
+          }
+          break;
         case "VP":
         case 0:
           message.eventType = 0;
@@ -976,6 +994,12 @@ export const hfp = ($root.hfp = (() => {
           break;
       }
       switch (object.transportMode) {
+        default:
+          if (typeof object.transportMode === "number") {
+            message.transportMode = object.transportMode;
+            break;
+          }
+          break;
         case "bus":
         case 0:
           message.transportMode = 0;
@@ -1097,7 +1121,9 @@ export const hfp = ($root.hfp = (() => {
       if (message.journeyType != null && message.hasOwnProperty("journeyType"))
         object.journeyType =
           options.enums === String
-            ? $root.hfp.Topic.JourneyType[message.journeyType]
+            ? $root.hfp.Topic.JourneyType[message.journeyType] === undefined
+              ? message.journeyType
+              : $root.hfp.Topic.JourneyType[message.journeyType]
             : message.journeyType;
       if (
         message.temporalType != null &&
@@ -1105,12 +1131,16 @@ export const hfp = ($root.hfp = (() => {
       )
         object.temporalType =
           options.enums === String
-            ? $root.hfp.Topic.TemporalType[message.temporalType]
+            ? $root.hfp.Topic.TemporalType[message.temporalType] === undefined
+              ? message.temporalType
+              : $root.hfp.Topic.TemporalType[message.temporalType]
             : message.temporalType;
       if (message.eventType != null && message.hasOwnProperty("eventType"))
         object.eventType =
           options.enums === String
-            ? $root.hfp.Topic.EventType[message.eventType]
+            ? $root.hfp.Topic.EventType[message.eventType] === undefined
+              ? message.eventType
+              : $root.hfp.Topic.EventType[message.eventType]
             : message.eventType;
       if (
         message.transportMode != null &&
@@ -1118,7 +1148,9 @@ export const hfp = ($root.hfp = (() => {
       )
         object.transportMode =
           options.enums === String
-            ? $root.hfp.Topic.TransportMode[message.transportMode]
+            ? $root.hfp.Topic.TransportMode[message.transportMode] === undefined
+              ? message.transportMode
+              : $root.hfp.Topic.TransportMode[message.transportMode]
             : message.transportMode;
       if (message.operatorId != null && message.hasOwnProperty("operatorId"))
         object.operatorId = message.operatorId;
@@ -2282,6 +2314,12 @@ export const hfp = ($root.hfp = (() => {
       if (object.line != null) message.line = object.line | 0;
       if (object.start != null) message.start = String(object.start);
       switch (object.loc) {
+        default:
+          if (typeof object.loc === "number") {
+            message.loc = object.loc;
+            break;
+          }
+          break;
         case "GPS":
         case 0:
           message.loc = 0;
@@ -2309,6 +2347,12 @@ export const hfp = ($root.hfp = (() => {
       if (object.tlpRequestid != null)
         message.tlpRequestid = object.tlpRequestid | 0;
       switch (object.tlpRequesttype) {
+        default:
+          if (typeof object.tlpRequesttype === "number") {
+            message.tlpRequesttype = object.tlpRequesttype;
+            break;
+          }
+          break;
         case "NORMAL":
         case 0:
           message.tlpRequesttype = 0;
@@ -2327,6 +2371,12 @@ export const hfp = ($root.hfp = (() => {
           break;
       }
       switch (object.tlpPrioritylevel) {
+        default:
+          if (typeof object.tlpPrioritylevel === "number") {
+            message.tlpPrioritylevel = object.tlpPrioritylevel;
+            break;
+          }
+          break;
         case "normal":
         case 0:
           message.tlpPrioritylevel = 0;
@@ -2341,6 +2391,12 @@ export const hfp = ($root.hfp = (() => {
           break;
       }
       switch (object.tlpReason) {
+        default:
+          if (typeof object.tlpReason === "number") {
+            message.tlpReason = object.tlpReason;
+            break;
+          }
+          break;
         case "GLOBAL":
         case 0:
           message.tlpReason = 0;
@@ -2360,6 +2416,12 @@ export const hfp = ($root.hfp = (() => {
       }
       if (object.tlpAttSeq != null) message.tlpAttSeq = object.tlpAttSeq | 0;
       switch (object.tlpDecision) {
+        default:
+          if (typeof object.tlpDecision === "number") {
+            message.tlpDecision = object.tlpDecision;
+            break;
+          }
+          break;
         case "ACK":
         case 0:
           message.tlpDecision = 0;
@@ -2520,7 +2582,9 @@ export const hfp = ($root.hfp = (() => {
       if (message.loc != null && message.hasOwnProperty("loc"))
         object.loc =
           options.enums === String
-            ? $root.hfp.Payload.LocationQualityMethod[message.loc]
+            ? $root.hfp.Payload.LocationQualityMethod[message.loc] === undefined
+              ? message.loc
+              : $root.hfp.Payload.LocationQualityMethod[message.loc]
             : message.loc;
       if (message.stop != null && message.hasOwnProperty("stop"))
         object.stop = message.stop;
@@ -2547,7 +2611,10 @@ export const hfp = ($root.hfp = (() => {
       )
         object.tlpRequesttype =
           options.enums === String
-            ? $root.hfp.Payload.TlpRequestType[message.tlpRequesttype]
+            ? $root.hfp.Payload.TlpRequestType[message.tlpRequesttype] ===
+              undefined
+              ? message.tlpRequesttype
+              : $root.hfp.Payload.TlpRequestType[message.tlpRequesttype]
             : message.tlpRequesttype;
       if (
         message.tlpPrioritylevel != null &&
@@ -2555,19 +2622,26 @@ export const hfp = ($root.hfp = (() => {
       )
         object.tlpPrioritylevel =
           options.enums === String
-            ? $root.hfp.Payload.TlpPriorityLevel[message.tlpPrioritylevel]
+            ? $root.hfp.Payload.TlpPriorityLevel[message.tlpPrioritylevel] ===
+              undefined
+              ? message.tlpPrioritylevel
+              : $root.hfp.Payload.TlpPriorityLevel[message.tlpPrioritylevel]
             : message.tlpPrioritylevel;
       if (message.tlpReason != null && message.hasOwnProperty("tlpReason"))
         object.tlpReason =
           options.enums === String
-            ? $root.hfp.Payload.TlpReason[message.tlpReason]
+            ? $root.hfp.Payload.TlpReason[message.tlpReason] === undefined
+              ? message.tlpReason
+              : $root.hfp.Payload.TlpReason[message.tlpReason]
             : message.tlpReason;
       if (message.tlpAttSeq != null && message.hasOwnProperty("tlpAttSeq"))
         object.tlpAttSeq = message.tlpAttSeq;
       if (message.tlpDecision != null && message.hasOwnProperty("tlpDecision"))
         object.tlpDecision =
           options.enums === String
-            ? $root.hfp.Payload.TlpDecision[message.tlpDecision]
+            ? $root.hfp.Payload.TlpDecision[message.tlpDecision] === undefined
+              ? message.tlpDecision
+              : $root.hfp.Payload.TlpDecision[message.tlpDecision]
             : message.tlpDecision;
       if (message.sid != null && message.hasOwnProperty("sid"))
         object.sid = message.sid;

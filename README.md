@@ -73,6 +73,8 @@ flowchart TB;
    npm start
    ```
 
+WIP: docker-compose.yml can be used to start full message pipeline locally, this might not be working yet.
+
 ## Docker
 
 You can use the Docker image `hsldevcom/transitdata-partial-apc-expander-combiner:edge`.

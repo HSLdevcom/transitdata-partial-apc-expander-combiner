@@ -1,9 +1,13 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
+import dotenv = require("dotenv");
+import capabilities, {
+  VehicleCapacityMap,
+} from "./generateVehicleCapabilities";
+
+dotenv.config();
 
 export type UniqueVehicleId = string;
-
-export type VehicleCapacityMap = Map<UniqueVehicleId, number>;
 
 export interface ProcessingConfig {
   apcWaitInSeconds: number;
@@ -22,10 +26,20 @@ export interface HealthCheckConfig {
   port: number;
 }
 
+export interface DatabaseConfig {
+  connectionString: string;
+}
+
+export interface VehicleTypeConfig {
+  vehicleTypes: string;
+}
+
 export interface Config {
   processing: ProcessingConfig;
   pulsar: PulsarConfig;
   healthCheck: HealthCheckConfig;
+  database: DatabaseConfig;
+  vehicleTypes: VehicleTypeConfig;
 }
 
 const getRequired = (envVariable: string) => {
@@ -66,57 +80,6 @@ const getOptionalFiniteFloatWithDefault = (
     }
   }
   return result;
-};
-
-const getVehicleCapacities = (): VehicleCapacityMap => {
-  const envVariable = "VEHICLE_CAPACITIES";
-  // Check the contents below. Crashing here is fine, too.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-  const parsed = JSON.parse(getRequired(envVariable)) as [string, number][];
-  // Check the contents below. Crashing here is fine, too.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-  const map: VehicleCapacityMap = new Map(parsed);
-  if (map.size !== parsed.length) {
-    throw new Error(
-      `${envVariable} has ${parsed.length - map.size} repeated vehicles.`
-    );
-  }
-  if (map.size < 1) {
-    throw new Error(
-      `${envVariable} must have at least one entries() pair in the form of a stringified JSON array of arrays.`
-    );
-  }
-  if (
-    Array.from(map.entries()).some(
-      ([vehicle, capacity]) =>
-        typeof vehicle !== "string" ||
-        typeof capacity !== "number" ||
-        !Number.isFinite(capacity) ||
-        capacity <= 0
-    )
-  ) {
-    throw new Error(
-      `${envVariable} must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
-    );
-  }
-  return map;
-};
-
-const getProcessingConfig = (): ProcessingConfig => {
-  const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
-    "APC_WAIT_IN_SECONDS",
-    6
-  );
-  const vehicleCapacities = getVehicleCapacities();
-  const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
-    "DEFAULT_VEHICLE_CAPACITY",
-    78
-  );
-  return {
-    apcWaitInSeconds,
-    vehicleCapacities,
-    defaultVehicleCapacity,
-  };
 };
 
 const createPulsarLog =
@@ -214,8 +177,73 @@ const getHealthCheckConfig = () => {
   return { port };
 };
 
-export const getConfig = (logger: pino.Logger): Config => ({
-  processing: getProcessingConfig(),
+const getDatabaseConfig = () => {
+  const connectionString = getRequired("DATABASE_CONNECTION_URI");
+  return { connectionString };
+};
+
+const getVehicleTypeConfig = () => {
+  const vehicleTypes = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
+  return { vehicleTypes };
+};
+
+const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
+  "DEFAULT_VEHICLE_CAPACITY",
+  78
+);
+
+const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
+  const capabilitiesMap: Map<string, number | undefined> = await capabilities(
+    getDatabaseConfig(),
+    getVehicleTypeConfig()
+  );
+  // Check the contents below. Crashing here is fine, too.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  if (capabilitiesMap.size < 1) {
+    throw new Error(
+      `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`
+    );
+  }
+
+  Array.from(capabilitiesMap.keys()).forEach((uniqueVehicleId) => {
+    if (!capabilitiesMap.get(uniqueVehicleId)) {
+      capabilitiesMap.set(uniqueVehicleId, defaultVehicleCapacity);
+    }
+  });
+
+  if (
+    Array.from(capabilitiesMap.entries()).some(
+      ([vehicle, capacity]) =>
+        typeof vehicle !== "string" ||
+        typeof capacity !== "number" ||
+        !Number.isFinite(capacity) ||
+        capacity <= 0
+    )
+  ) {
+    throw new Error(
+      `Capacities map must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
+    );
+  }
+  return capabilitiesMap;
+};
+
+const getProcessingConfig = async (): Promise<ProcessingConfig> => {
+  const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
+    "APC_WAIT_IN_SECONDS",
+    6
+  );
+  const vehicleCapacities = await getVehicleCapacities();
+  return {
+    apcWaitInSeconds,
+    vehicleCapacities,
+    defaultVehicleCapacity,
+  };
+};
+
+export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+  database: getDatabaseConfig(),
+  vehicleTypes: getVehicleTypeConfig(),
+  processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });

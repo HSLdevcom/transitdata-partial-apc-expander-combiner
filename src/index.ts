@@ -1,5 +1,6 @@
 import pino from "pino";
 import type Pulsar from "pulsar-client";
+import dotenv = require("dotenv");
 import { getConfig } from "./config";
 import createHealthCheckServer from "./healthCheck";
 import keepProcessingMessages from "./messageProcessing";
@@ -9,6 +10,8 @@ import {
   createPulsarConsumer,
 } from "./pulsar";
 import transformUnknownToError from "./util";
+
+dotenv.config();
 
 /**
  * Exit gracefully.
@@ -150,7 +153,7 @@ const exitGracefully = async (
       process.on("SIGTERM", (signal) => exitHandler(143, new Error(signal)));
 
       logger.info("Read configuration");
-      const config = getConfig(logger);
+      const config = await getConfig(logger);
       logger.info("Create Pulsar client");
       client = createPulsarClient(config.pulsar);
       logger.info("Create Pulsar producer");
