@@ -1,5 +1,6 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
+import { secrets } from "docker-secret";
 import dotenv = require("dotenv");
 import capabilities, {
   VehicleCapacityMap,
@@ -43,7 +44,10 @@ export interface Config {
 }
 
 const getRequired = (envVariable: string) => {
-  const variable = process.env[envVariable];
+  let variable = process.env[envVariable];
+  if (variable === undefined) {
+    variable = secrets[envVariable];
+  }
   if (variable === undefined) {
     throw new Error(`${envVariable} must be defined`);
   }
