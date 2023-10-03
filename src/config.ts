@@ -44,20 +44,22 @@ export interface Config {
 }
 
 const getRequired = (envVariable: string) => {
-  let variable = process.env[envVariable];
+  const variable = process.env[envVariable];
   if (variable) {
     return variable;
-  } else if (secrets.envVariable) {
+  }
+  if (secrets.envVariable) {
     return secrets.envVariable;
   }
   throw new Error(`${envVariable} must be defined`);
 };
 
 const getOptional = (envVariable: string) => {
-  let variable = process.env[envVariable];
+  const variable = process.env[envVariable];
   if (variable) {
     return variable;
-  } else if (secrets.envVariable) {
+  }
+  if (secrets.envVariable) {
     return secrets.envVariable;
   }
   return undefined;
