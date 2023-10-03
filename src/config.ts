@@ -45,16 +45,10 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
-  console.log("+++++ getRequired variable: ", variable);
   if (variable && !variable.startsWith("/run/secrets/")) {
-    console.log("+++++ getRequired returning variable");
     return variable;
   }
   if (secrets.envVariable) {
-    console.log(
-      "+++++ getRequired returning secrets.envVariable: ",
-      secrets.envVariable.substring(0, 4)
-    );
     return secrets.envVariable;
   }
   throw new Error(`${envVariable} must be defined`);
@@ -62,16 +56,10 @@ const getRequired = (envVariable: string) => {
 
 const getOptional = (envVariable: string) => {
   const variable = process.env[envVariable];
-  console.log("+++++ getOptional variable: ", variable);
   if (variable && !variable.startsWith("/run/secrets/")) {
-    console.log("+++++ getOptional returning variable");
     return variable;
   }
   if (secrets.envVariable) {
-    console.log(
-      "+++++ getOptional returning secrets.envVariable: ",
-      secrets.envVariable.substring(0, 4)
-    );
     return secrets.envVariable;
   }
   return undefined;
