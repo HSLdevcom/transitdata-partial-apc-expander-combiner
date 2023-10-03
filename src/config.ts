@@ -48,9 +48,9 @@ const getRequired = (envVariable: string) => {
   if (variable) {
     return variable;
   } else if (secrets.envVariable) {
-    return secrets.envVariable
+    return secrets.envVariable;
   }
-    throw new Error(`${envVariable} must be defined`);
+  throw new Error(`${envVariable} must be defined`);
 };
 
 const getOptional = (envVariable: string) => {
@@ -58,7 +58,7 @@ const getOptional = (envVariable: string) => {
   if (variable) {
     return variable;
   } else if (secrets.envVariable) {
-    return secrets.envVariable
+    return secrets.envVariable;
   }
   return undefined;
 };
