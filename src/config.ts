@@ -45,7 +45,7 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable) {
+  if (variable && !variable.startsWith("/run/secrets/")) {
     return variable;
   }
   if (secrets.envVariable) {
@@ -56,7 +56,7 @@ const getRequired = (envVariable: string) => {
 
 const getOptional = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable) {
+  if (variable && !variable.startsWith("/run/secrets/")) {
     return variable;
   }
   if (secrets.envVariable) {
