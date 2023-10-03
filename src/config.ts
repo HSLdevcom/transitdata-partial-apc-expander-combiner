@@ -54,7 +54,13 @@ const getRequired = (envVariable: string) => {
   return variable;
 };
 
-const getOptional = (envVariable: string) => process.env[envVariable];
+const getOptional = (envVariable: string) => {
+  let variable = process.env[envVariable];
+  if (variable === undefined) {
+    variable = secrets[envVariable];
+  }
+  return variable;
+};
 
 const getOptionalBooleanWithDefault = (
   envVariable: string,
