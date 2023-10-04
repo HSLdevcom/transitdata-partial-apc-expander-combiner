@@ -190,8 +190,11 @@ const getHealthCheckConfig = () => {
   return { port };
 };
 
-const getDatabaseConfig = () => {
-  const connectionString = getRequired("DATABASE_CONNECTION_URI");
+const getDatabaseConfig = (): DatabaseConfig => {
+  let connectionString = secrets.DATABASE_CONNECTION_URI;
+  if (!connectionString) {
+    connectionString = "";
+  }
   return { connectionString };
 };
 
