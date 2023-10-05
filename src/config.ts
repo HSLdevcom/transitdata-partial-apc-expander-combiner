@@ -36,9 +36,6 @@ enum DatabaseConfigTypeEnum {
   ENVIRONMENT_VARIABLE = "ENVIRONMENT_VARIABLE",
 }
 
-let databaseConfigType: DatabaseConfigTypeEnum =
-  DatabaseConfigTypeEnum.DOCKER_SECRET;
-
 export interface VehicleTypeConfig {
   vehicleTypes: string;
 }
@@ -273,10 +270,15 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   healthCheck: getHealthCheckConfig(),
 });
 
-// To test locally, uncomment the code block below and run like this: npx ts-node src/config.ts
+// To run locally:
+
+// 1. change databaseConfigType value to DatabaseConfigTypeEnum.ENVIRONMENT_VARIABLE
+const databaseConfigType: DatabaseConfigTypeEnum =
+  DatabaseConfigTypeEnum.DOCKER_SECRET;
+
+// 2. uncomment the code block below
 /*
 (async () => {
-  databaseConfigType = DatabaseConfigTypeEnum.ENVIRONMENT_VARIABLE;
   const capacities = await getVehicleCapacities();
   console.log("CAPACITIES SIZE:", capacities.size);
   console.log("FOR EXAMPLE:");
@@ -285,3 +287,7 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   console.log("0022/00945", capacities.get("0022/00945"));
 })();
 */
+
+// 3. save this file (be careful not to commit these changes)
+
+// 4. run using this command: npx ts-node src/config.ts
