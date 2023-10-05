@@ -31,6 +31,14 @@ export interface DatabaseConfig {
   connectionString: string;
 }
 
+enum DatabaseConfigTypeEnum {
+  DOCKER_SECRET = "DOCKER_SECRET",
+  ENVIRONMENT_VARIABLE = "ENVIRONMENT_VARIABLE",
+}
+
+let databaseConfigType: DatabaseConfigTypeEnum =
+  DatabaseConfigTypeEnum.DOCKER_SECRET;
+
 export interface VehicleTypeConfig {
   vehicleTypes: string;
 }
@@ -45,22 +53,16 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable && !variable.startsWith("/run/secrets/")) {
+  if (variable) {
     return variable;
-  }
-  if (secrets.envVariable) {
-    return secrets.envVariable;
   }
   throw new Error(`${envVariable} must be defined`);
 };
 
 const getOptional = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable && !variable.startsWith("/run/secrets/")) {
+  if (variable) {
     return variable;
-  }
-  if (secrets.envVariable) {
-    return secrets.envVariable;
   }
   return undefined;
 };
@@ -191,10 +193,17 @@ const getHealthCheckConfig = () => {
 };
 
 const getDatabaseConfig = (): DatabaseConfig => {
-  let connectionString = secrets.DATABASE_CONNECTION_URI;
-  if (!connectionString) {
-    connectionString = "";
+  let connectionString: string | undefined;
+
+  if (databaseConfigType === DatabaseConfigTypeEnum.DOCKER_SECRET) {
+    connectionString = secrets.DATABASE_CONNECTION_URI;
+    if (!connectionString) {
+      connectionString = "";
+    }
+  } else {
+    connectionString = getRequired("DATABASE_CONNECTION_URI");
   }
+
   return { connectionString };
 };
 
@@ -263,3 +272,16 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });
+
+// To test locally, uncomment the code block below and run like this: npx ts-node src/config.ts
+/*
+(async () => {
+  databaseConfigType = DatabaseConfigTypeEnum.ENVIRONMENT_VARIABLE;
+  const capacities = await getVehicleCapacities();
+  console.log("CAPACITIES SIZE:", capacities.size);
+  console.log("FOR EXAMPLE:");
+  console.log("0022/00979", capacities.get("0022/00979"));
+  console.log("0018/00887", capacities.get("0018/00887"));
+  console.log("0022/00945", capacities.get("0022/00945"));
+})();
+*/
