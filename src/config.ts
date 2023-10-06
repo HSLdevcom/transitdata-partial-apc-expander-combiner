@@ -45,22 +45,16 @@ export interface Config {
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable && !variable.startsWith("/run/secrets/")) {
+  if (variable) {
     return variable;
-  }
-  if (secrets.envVariable) {
-    return secrets.envVariable;
   }
   throw new Error(`${envVariable} must be defined`);
 };
 
 const getOptional = (envVariable: string) => {
   const variable = process.env[envVariable];
-  if (variable && !variable.startsWith("/run/secrets/")) {
+  if (variable) {
     return variable;
-  }
-  if (secrets.envVariable) {
-    return secrets.envVariable;
   }
   return undefined;
 };
@@ -191,10 +185,17 @@ const getHealthCheckConfig = () => {
 };
 
 const getDatabaseConfig = (): DatabaseConfig => {
-  let connectionString = secrets.DATABASE_CONNECTION_URI;
+  let connectionString: string | undefined = getOptional(
+    "DATABASE_CONNECTION_URI"
+  );
+
   if (!connectionString) {
-    connectionString = "";
+    connectionString = secrets.DATABASE_CONNECTION_URI;
+    if (!connectionString) {
+      connectionString = "";
+    }
   }
+
   return { connectionString };
 };
 
@@ -263,3 +264,23 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });
+
+// To run locally:
+
+// 1. set environment variable DATABASE_CONNECTION_URI
+
+// 2. uncomment the code block below
+/*
+(async () => {
+  const capacities = await getVehicleCapacities();
+  console.log("CAPACITIES SIZE:", capacities.size);
+  console.log("FOR EXAMPLE:");
+  console.log("0022/00979", capacities.get("0022/00979"));
+  console.log("0018/00887", capacities.get("0018/00887"));
+  console.log("0022/00945", capacities.get("0022/00945"));
+})();
+*/
+
+// 3. save this file (be careful not to commit the update of step 2)
+
+// 4. run using this command: npx ts-node src/config.ts
