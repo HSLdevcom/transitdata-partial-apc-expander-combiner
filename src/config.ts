@@ -31,11 +31,6 @@ export interface DatabaseConfig {
   connectionString: string;
 }
 
-enum DatabaseConfigTypeEnum {
-  DOCKER_SECRET = "DOCKER_SECRET",
-  ENVIRONMENT_VARIABLE = "ENVIRONMENT_VARIABLE",
-}
-
 export interface VehicleTypeConfig {
   vehicleTypes: string;
 }
@@ -190,15 +185,15 @@ const getHealthCheckConfig = () => {
 };
 
 const getDatabaseConfig = (): DatabaseConfig => {
-  let connectionString: string | undefined;
+  let connectionString: string | undefined = getOptional(
+    "DATABASE_CONNECTION_URI"
+  );
 
-  if (databaseConfigType === DatabaseConfigTypeEnum.DOCKER_SECRET) {
+  if (!connectionString) {
     connectionString = secrets.DATABASE_CONNECTION_URI;
     if (!connectionString) {
       connectionString = "";
     }
-  } else {
-    connectionString = getRequired("DATABASE_CONNECTION_URI");
   }
 
   return { connectionString };
@@ -272,9 +267,7 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
 
 // To run locally:
 
-// 1. change databaseConfigType value to DatabaseConfigTypeEnum.ENVIRONMENT_VARIABLE
-const databaseConfigType: DatabaseConfigTypeEnum =
-  DatabaseConfigTypeEnum.DOCKER_SECRET;
+// 1. set environment variable DATABASE_CONNECTION_URI
 
 // 2. uncomment the code block below
 /*
@@ -288,6 +281,6 @@ const databaseConfigType: DatabaseConfigTypeEnum =
 })();
 */
 
-// 3. save this file (be careful not to commit these changes)
+// 3. save this file (be careful not to commit the update of step 2)
 
 // 4. run using this command: npx ts-node src/config.ts
