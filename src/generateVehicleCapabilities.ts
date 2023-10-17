@@ -18,33 +18,32 @@ function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
 }
 
 const getEquipmentFromDatabase = async (
-  databaseConfig: DatabaseConfig
+  databaseConfig: DatabaseConfig,
 ): Promise<Vehicle[]> => {
   return db(databaseConfig.connectionString).many(
-    "SELECT vehicle_id, operator_id, type FROM equipment"
+    "SELECT vehicle_id, operator_id, type FROM equipment",
   );
 };
 
 const getCapacities = async (
   databaseConfig: DatabaseConfig,
-  vehicleTypeConfig: VehicleTypeConfig
+  vehicleTypeConfig: VehicleTypeConfig,
 ) => {
-  const capabilitiesList: Vehicle[] = await getEquipmentFromDatabase(
-    databaseConfig
-  );
+  const capabilitiesList: Vehicle[] =
+    await getEquipmentFromDatabase(databaseConfig);
   const capabilitiesMap: Map<UniqueVehicleId, number | undefined> = new Map();
 
   const capacitiesByVehicleTypeJson = JSON.parse(
-    vehicleTypeConfig.vehicleTypes
+    vehicleTypeConfig.vehicleTypes,
   ) as [string, number][];
   const capacitiesByVehicleType: VehicleTypeCapacityMap = new Map(
-    capacitiesByVehicleTypeJson
+    capacitiesByVehicleTypeJson,
   );
 
   capabilitiesList.forEach((capability) => {
     const mapKey: string = getUniqueVehicleId(capability);
     const capacity: number | undefined = capacitiesByVehicleType.get(
-      capability.type
+      capability.type,
     );
     const mapValue: number | undefined = capacity;
     capabilitiesMap.set(mapKey, mapValue);

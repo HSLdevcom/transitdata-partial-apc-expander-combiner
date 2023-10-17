@@ -57,12 +57,12 @@ function invalidValue(typ: any, val: any, key: any = ""): never {
   if (key) {
     throw Error(
       `Invalid value for key "${key}". Expected type ${JSON.stringify(
-        typ
-      )} but got ${JSON.stringify(val)}`
+        typ,
+      )} but got ${JSON.stringify(val)}`,
     );
   }
   throw Error(
-    `Invalid value ${JSON.stringify(val)} for type ${JSON.stringify(typ)}`
+    `Invalid value ${JSON.stringify(val)} for type ${JSON.stringify(typ)}`,
   );
 }
 
@@ -127,7 +127,7 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
   function transformObject(
     props: { [k: string]: any },
     additional: any,
-    val: any
+    val: any,
   ): any {
     if (val === null || typeof val !== "object" || Array.isArray(val)) {
       return invalidValue("object", val);
@@ -204,7 +204,7 @@ const typeMap: any = {
       { json: "veh", js: "veh", typ: 0 },
       { json: "messageId", js: "messageId", typ: "" },
     ],
-    false
+    false,
   ),
   Vehiclecounts: o(
     [
@@ -212,14 +212,14 @@ const typeMap: any = {
       { json: "doorcounts", js: "doorcounts", typ: a(r("Doorcount")) },
       { json: "countquality", js: "countquality", typ: "" },
     ],
-    false
+    false,
   ),
   Doorcount: o(
     [
       { json: "door", js: "door", typ: "" },
       { json: "count", js: "count", typ: a(r("Count")) },
     ],
-    false
+    false,
   ),
   Count: o(
     [
@@ -227,6 +227,6 @@ const typeMap: any = {
       { json: "in", js: "in", typ: 0 },
       { json: "out", js: "out", typ: 0 },
     ],
-    false
+    false,
   ),
 };

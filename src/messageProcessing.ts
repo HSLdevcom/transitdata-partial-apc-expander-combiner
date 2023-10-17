@@ -8,8 +8,8 @@ const keepReactingToHfp = async (
   hfpConsumer: Pulsar.Consumer,
   expandWithApcAndSend: (
     hfpMessage: Pulsar.Message,
-    sendCallback: (fullApcMessage: Pulsar.ProducerMessage) => void
-  ) => void
+    sendCallback: (fullApcMessage: Pulsar.ProducerMessage) => void,
+  ) => void,
 ) => {
   // Errors are handled in the calling function.
   /* eslint-disable no-await-in-loop */
@@ -31,7 +31,7 @@ const keepReactingToHfp = async (
 
 const keepSummingApcValues = async (
   partialApcConsumer: Pulsar.Consumer,
-  updateApcCache: (partialApcMessage: Pulsar.Message) => void
+  updateApcCache: (partialApcMessage: Pulsar.Message) => void,
 ): Promise<void> => {
   // Errors are handled on the main level.
   /* eslint-disable no-await-in-loop */
@@ -48,11 +48,11 @@ const keepProcessingMessages = async (
   producer: Pulsar.Producer,
   hfpConsumer: Pulsar.Consumer,
   partialApcConsumer: Pulsar.Consumer,
-  config: ProcessingConfig
+  config: ProcessingConfig,
 ): Promise<void> => {
   const { updateApcCache, expandWithApcAndSend } = initializeMatching(
     logger,
-    config
+    config,
   );
   const promises = [
     keepReactingToHfp(producer, hfpConsumer, expandWithApcAndSend),

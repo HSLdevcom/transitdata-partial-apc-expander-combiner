@@ -25,7 +25,7 @@ const exitGracefully = async (
   client?: Pulsar.Client,
   producer?: Pulsar.Producer,
   hfpConsumer?: Pulsar.Consumer,
-  partialApcConsumer?: Pulsar.Consumer
+  partialApcConsumer?: Pulsar.Consumer,
 ) => {
   if (exitError) {
     logger.fatal(exitError);
@@ -40,7 +40,7 @@ const exitGracefully = async (
   } catch (err) {
     logger.error(
       { err },
-      "Something went wrong when setting health checks to fail"
+      "Something went wrong when setting health checks to fail",
     );
   }
   try {
@@ -51,7 +51,7 @@ const exitGracefully = async (
   } catch (err) {
     logger.error(
       { err },
-      "Something went wrong when closing partial APC Pulsar consumer"
+      "Something went wrong when closing partial APC Pulsar consumer",
     );
   }
   try {
@@ -62,7 +62,7 @@ const exitGracefully = async (
   } catch (err) {
     logger.error(
       { err },
-      "Something went wrong when closing HFP Pulsar consumer"
+      "Something went wrong when closing HFP Pulsar consumer",
     );
   }
   try {
@@ -97,7 +97,7 @@ const exitGracefully = async (
   } catch (err) {
     logger.error(
       { err },
-      "Something went wrong when closing health check server"
+      "Something went wrong when closing health check server",
     );
   }
   logger.info("Exit process");
@@ -136,7 +136,7 @@ const exitGracefully = async (
         client,
         producer,
         hfpConsumer,
-        partialApcConsumer
+        partialApcConsumer,
       );
       /* eslint-enable @typescript-eslint/no-floating-promises */
     };
@@ -145,7 +145,7 @@ const exitGracefully = async (
       // Handle different kinds of exits.
       process.on("beforeExit", () => exitHandler(1, new Error("beforeExit")));
       process.on("unhandledRejection", (reason) =>
-        exitHandler(1, transformUnknownToError(reason))
+        exitHandler(1, transformUnknownToError(reason)),
       );
       process.on("uncaughtException", (err) => exitHandler(1, err));
       process.on("SIGINT", (signal) => exitHandler(130, new Error(signal)));
@@ -161,19 +161,19 @@ const exitGracefully = async (
       logger.info("Create HFP Pulsar consumer");
       hfpConsumer = await createPulsarConsumer(
         client,
-        config.pulsar.hfpConsumerConfig
+        config.pulsar.hfpConsumerConfig,
       );
       logger.info("Create partial APC Pulsar consumer");
       partialApcConsumer = await createPulsarConsumer(
         client,
-        config.pulsar.partialApcConsumerConfig
+        config.pulsar.partialApcConsumerConfig,
       );
       logger.info("Create health check server");
       ({ closeHealthCheckServer, setHealth } = createHealthCheckServer(
         config.healthCheck,
         producer,
         hfpConsumer,
-        partialApcConsumer
+        partialApcConsumer,
       ));
       logger.info("Set health check status to OK");
       setHealth(true);
@@ -183,7 +183,7 @@ const exitGracefully = async (
         producer,
         hfpConsumer,
         partialApcConsumer,
-        config.processing
+        config.processing,
       );
     } catch (err) {
       exitHandler(1, transformUnknownToError(err));

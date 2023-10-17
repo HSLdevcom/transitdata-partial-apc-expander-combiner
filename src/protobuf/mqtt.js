@@ -214,9 +214,9 @@ export const mqtt = ($root.mqtt = (() => {
           $util.base64.decode(
             object.payload,
             (message.payload = $util.newBuffer(
-              $util.base64.length(object.payload)
+              $util.base64.length(object.payload),
             )),
-            0
+            0,
           );
         else if (object.payload.length >= 0) message.payload = object.payload;
       return message;

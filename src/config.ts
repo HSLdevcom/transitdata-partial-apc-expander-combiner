@@ -61,7 +61,7 @@ const getOptional = (envVariable: string) => {
 
 const getOptionalBooleanWithDefault = (
   envVariable: string,
-  defaultValue: boolean
+  defaultValue: boolean,
 ) => {
   let result = defaultValue;
   const str = getOptional(envVariable);
@@ -76,7 +76,7 @@ const getOptionalBooleanWithDefault = (
 
 const getOptionalFiniteFloatWithDefault = (
   envVariable: string,
-  defaultValue: number
+  defaultValue: number,
 ) => {
   let result = defaultValue;
   const str = getOptional(envVariable);
@@ -95,7 +95,7 @@ const createPulsarLog =
     level: Pulsar.LogLevel,
     file: string,
     line: number,
-    message: string
+    message: string,
   ): void => {
     switch (level) {
       case Pulsar.LogLevel.DEBUG:
@@ -129,7 +129,7 @@ const getPulsarCompressionType = (): Pulsar.CompressionType => {
   ) {
     throw new Error(
       "If defined, PULSAR_COMPRESSION_TYPE must be one of 'Zlib', 'LZ4', " +
-        "'ZSTD' or 'SNAPPY'. Default is 'LZ4'."
+        "'ZSTD' or 'SNAPPY'. Default is 'LZ4'.",
     );
   }
   return compressionType;
@@ -141,7 +141,7 @@ const getPulsarConfig = (logger: pino.Logger): PulsarConfig => {
   const producerTopic = getRequired("PULSAR_PRODUCER_TOPIC");
   const blockIfQueueFull = getOptionalBooleanWithDefault(
     "PULSAR_BLOCK_IF_QUEUE_FULL",
-    true
+    true,
   );
   const compressionType = getPulsarCompressionType();
   const hfpConsumerTopic = getRequired("PULSAR_HFP_CONSUMER_TOPIC");
@@ -149,7 +149,7 @@ const getPulsarConfig = (logger: pino.Logger): PulsarConfig => {
   const hfpSubscriptionType = "Exclusive";
   const hfpSubscriptionInitialPosition = "Earliest";
   const partialApcConsumerTopic = getRequired(
-    "PULSAR_PARTIAL_APC_CONSUMER_TOPIC"
+    "PULSAR_PARTIAL_APC_CONSUMER_TOPIC",
   );
   const partialApcSubscription = getRequired("PULSAR_PARTIAL_APC_SUBSCRIPTION");
   const partialApcSubscriptionType = "Exclusive";
@@ -186,7 +186,7 @@ const getHealthCheckConfig = () => {
 
 const getDatabaseConfig = (): DatabaseConfig => {
   let connectionString: string | undefined = getOptional(
-    "DATABASE_CONNECTION_URI"
+    "DATABASE_CONNECTION_URI",
   );
 
   if (!connectionString) {
@@ -206,19 +206,19 @@ const getVehicleTypeConfig = () => {
 
 const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
   "DEFAULT_VEHICLE_CAPACITY",
-  78
+  78,
 );
 
 const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
   const capabilitiesMap: Map<string, number | undefined> = await capabilities(
     getDatabaseConfig(),
-    getVehicleTypeConfig()
+    getVehicleTypeConfig(),
   );
   // Check the contents below. Crashing here is fine, too.
   // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
   if (capabilitiesMap.size < 1) {
     throw new Error(
-      `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`
+      `Capacities map must have at least one entries() pair in the form of a stringified JSON array of arrays.`,
     );
   }
 
@@ -234,11 +234,11 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
         typeof vehicle !== "string" ||
         typeof capacity !== "number" ||
         !Number.isFinite(capacity) ||
-        capacity <= 0
+        capacity <= 0,
     )
   ) {
     throw new Error(
-      `Capacities map must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`
+      `Capacities map must contain only pairs of [string, number] in the form of a stringified JSON array of arrays. The numbers must be finite and positive.`,
     );
   }
   return capabilitiesMap;
@@ -247,7 +247,7 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
     "APC_WAIT_IN_SECONDS",
-    6
+    6,
   );
   const vehicleCapacities = await getVehicleCapacities();
   return {

@@ -46,7 +46,7 @@ export namespace hfp {
      */
     public static encode(
       message: hfp.IData,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -57,7 +57,7 @@ export namespace hfp {
      */
     public static encodeDelimited(
       message: hfp.IData,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -70,7 +70,7 @@ export namespace hfp {
      */
     public static decode(
       reader: $protobuf.Reader | Uint8Array,
-      length?: number
+      length?: number,
     ): hfp.Data;
 
     /**
@@ -81,7 +81,7 @@ export namespace hfp {
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
     public static decodeDelimited(
-      reader: $protobuf.Reader | Uint8Array
+      reader: $protobuf.Reader | Uint8Array,
     ): hfp.Data;
 
     /**
@@ -106,7 +106,7 @@ export namespace hfp {
      */
     public static toObject(
       message: hfp.Data,
-      options?: $protobuf.IConversionOptions
+      options?: $protobuf.IConversionOptions,
     ): { [k: string]: any };
 
     /**
@@ -263,7 +263,7 @@ export namespace hfp {
      */
     public static encode(
       message: hfp.ITopic,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -274,7 +274,7 @@ export namespace hfp {
      */
     public static encodeDelimited(
       message: hfp.ITopic,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -287,7 +287,7 @@ export namespace hfp {
      */
     public static decode(
       reader: $protobuf.Reader | Uint8Array,
-      length?: number
+      length?: number,
     ): hfp.Topic;
 
     /**
@@ -298,7 +298,7 @@ export namespace hfp {
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
     public static decodeDelimited(
-      reader: $protobuf.Reader | Uint8Array
+      reader: $protobuf.Reader | Uint8Array,
     ): hfp.Topic;
 
     /**
@@ -323,7 +323,7 @@ export namespace hfp {
      */
     public static toObject(
       message: hfp.Topic,
-      options?: $protobuf.IConversionOptions
+      options?: $protobuf.IConversionOptions,
     ): { [k: string]: any };
 
     /**
@@ -660,7 +660,7 @@ export namespace hfp {
      */
     public static encode(
       message: hfp.IPayload,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -671,7 +671,7 @@ export namespace hfp {
      */
     public static encodeDelimited(
       message: hfp.IPayload,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -684,7 +684,7 @@ export namespace hfp {
      */
     public static decode(
       reader: $protobuf.Reader | Uint8Array,
-      length?: number
+      length?: number,
     ): hfp.Payload;
 
     /**
@@ -695,7 +695,7 @@ export namespace hfp {
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
     public static decodeDelimited(
-      reader: $protobuf.Reader | Uint8Array
+      reader: $protobuf.Reader | Uint8Array,
     ): hfp.Payload;
 
     /**
@@ -720,7 +720,7 @@ export namespace hfp {
      */
     public static toObject(
       message: hfp.Payload,
-      options?: $protobuf.IConversionOptions
+      options?: $protobuf.IConversionOptions,
     ): { [k: string]: any };
 
     /**

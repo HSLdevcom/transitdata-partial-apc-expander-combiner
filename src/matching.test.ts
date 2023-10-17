@@ -234,7 +234,7 @@ const mockPartialApcMessage = ({
     throw Error(verificationErrorMessage);
   }
   const buffer = Buffer.from(
-    mqtt.RawMessage.encode(mqtt.RawMessage.create(mqttMessage)).finish()
+    mqtt.RawMessage.encode(mqtt.RawMessage.create(mqttMessage)).finish(),
   );
   return mockPulsarMessage({ buffer, eventTimestamp });
 };
@@ -251,7 +251,7 @@ const mockHfpMessage = ({
     throw Error(verificationErrorMessage);
   }
   const buffer = Buffer.from(
-    hfp.Data.encode(hfp.Data.create(hfpData)).finish()
+    hfp.Data.encode(hfp.Data.create(hfpData)).finish(),
   );
   return mockPulsarMessage({ buffer, eventTimestamp });
 };
@@ -268,7 +268,7 @@ const mockApcMessage = ({
     throw Error(verificationErrorMessage);
   }
   const data = Buffer.from(
-    passengerCount.Data.encode(passengerCount.Data.create(apcData)).finish()
+    passengerCount.Data.encode(passengerCount.Data.create(apcData)).finish(),
   );
   return { data, eventTimestamp };
 };
@@ -294,7 +294,7 @@ describe("Cache and trigger sending", () => {
     };
     const { updateApcCache, expandWithApcAndSend } = initializeMatching(
       logger,
-      processingConfig
+      processingConfig,
     );
     const partialApcMessage1 = mockPartialApcMessage({
       content: {
@@ -460,16 +460,16 @@ describe("Cache and trigger sending", () => {
       try {
         const resultData = passengerCount.Data.decode(result.data);
         const expectedData = passengerCount.Data.decode(
-          expectedApcMessage.data
+          expectedApcMessage.data,
         );
         expect(resultData.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
-          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number
+          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
         );
         delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
         delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
         expect(resultData).toStrictEqual(expectedData);
         expect(result.eventTimestamp).toStrictEqual(
-          expectedApcMessage.eventTimestamp
+          expectedApcMessage.eventTimestamp,
         );
         done();
       } catch (error) {
@@ -499,12 +499,12 @@ describe("Cache and trigger sending", () => {
     };
     const { updateApcCache, expandWithApcAndSend } = initializeMatching(
       logger,
-      processingConfig
+      processingConfig,
     );
     const lastPartialApcTst = new Date("2022-08-30T13:20:44Z");
     const peeledPartialApcMessage = mockPartialApcMessage({
       content: peeledPartialApc.Convert.toPeeledPartialApc(
-        '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}'
+        '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}',
       ),
       mqttTopic: "/hfp/v2/journey/ongoing/apc/bus/0018/00817",
       eventTimestamp: 1660731500000,
@@ -605,18 +605,18 @@ describe("Cache and trigger sending", () => {
       try {
         const resultData = passengerCount.Data.decode(result.data);
         const expectedData = passengerCount.Data.decode(
-          expectedApcMessage.data
+          expectedApcMessage.data,
         );
         // Compare vehicleLoadRatio approximately and then remove it to compare
         // the rest exactly.
         expect(resultData.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
-          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number
+          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
         );
         delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
         delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
         expect(resultData).toStrictEqual(expectedData);
         expect(result.eventTimestamp).toStrictEqual(
-          expectedApcMessage.eventTimestamp
+          expectedApcMessage.eventTimestamp,
         );
         done();
       } catch (error) {

@@ -92,11 +92,11 @@ export const hfp = ($root.hfp = (() => {
       if (message.topic != null && Object.hasOwnProperty.call(message, "topic"))
         $root.hfp.Topic.encode(
           message.topic,
-          writer.uint32(/* id 2, wireType 2 =*/ 18).fork()
+          writer.uint32(/* id 2, wireType 2 =*/ 18).fork(),
         ).ldelim();
       $root.hfp.Payload.encode(
         message.payload,
-        writer.uint32(/* id 3, wireType 2 =*/ 26).fork()
+        writer.uint32(/* id 3, wireType 2 =*/ 26).fork(),
       ).ldelim();
       return writer;
     };
@@ -862,7 +862,7 @@ export const hfp = ($root.hfp = (() => {
       if (object.receivedAt != null)
         if ($util.Long)
           (message.receivedAt = $util.Long.fromValue(
-            object.receivedAt
+            object.receivedAt,
           )).unsigned = false;
         else if (typeof object.receivedAt === "string")
           message.receivedAt = parseInt(object.receivedAt, 10);
@@ -871,7 +871,7 @@ export const hfp = ($root.hfp = (() => {
         else if (typeof object.receivedAt === "object")
           message.receivedAt = new $util.LongBits(
             object.receivedAt.low >>> 0,
-            object.receivedAt.high >>> 0
+            object.receivedAt.high >>> 0,
           ).toNumber();
       if (object.topicPrefix != null)
         message.topicPrefix = String(object.topicPrefix);
@@ -1108,7 +1108,7 @@ export const hfp = ($root.hfp = (() => {
               : options.longs === Number
               ? new $util.LongBits(
                   message.receivedAt.low >>> 0,
-                  message.receivedAt.high >>> 0
+                  message.receivedAt.high >>> 0,
                 ).toNumber()
               : message.receivedAt;
       if (message.topicPrefix != null && message.hasOwnProperty("topicPrefix"))
@@ -2299,7 +2299,7 @@ export const hfp = ($root.hfp = (() => {
         else if (typeof object.tsi === "object")
           message.tsi = new $util.LongBits(
             object.tsi.low >>> 0,
-            object.tsi.high >>> 0
+            object.tsi.high >>> 0,
           ).toNumber();
       if (object.spd != null) message.spd = Number(object.spd);
       if (object.hdg != null) message.hdg = object.hdg | 0;
@@ -2537,7 +2537,7 @@ export const hfp = ($root.hfp = (() => {
               : options.longs === Number
               ? new $util.LongBits(
                   message.tsi.low >>> 0,
-                  message.tsi.high >>> 0
+                  message.tsi.high >>> 0,
                 ).toNumber()
               : message.tsi;
       if (message.spd != null && message.hasOwnProperty("spd"))

@@ -46,7 +46,7 @@ export namespace mqtt {
      */
     public static encode(
       message: mqtt.IRawMessage,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -57,7 +57,7 @@ export namespace mqtt {
      */
     public static encodeDelimited(
       message: mqtt.IRawMessage,
-      writer?: $protobuf.Writer
+      writer?: $protobuf.Writer,
     ): $protobuf.Writer;
 
     /**
@@ -70,7 +70,7 @@ export namespace mqtt {
      */
     public static decode(
       reader: $protobuf.Reader | Uint8Array,
-      length?: number
+      length?: number,
     ): mqtt.RawMessage;
 
     /**
@@ -81,7 +81,7 @@ export namespace mqtt {
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
     public static decodeDelimited(
-      reader: $protobuf.Reader | Uint8Array
+      reader: $protobuf.Reader | Uint8Array,
     ): mqtt.RawMessage;
 
     /**
@@ -106,7 +106,7 @@ export namespace mqtt {
      */
     public static toObject(
       message: mqtt.RawMessage,
-      options?: $protobuf.IConversionOptions
+      options?: $protobuf.IConversionOptions,
     ): { [k: string]: any };
 
     /**

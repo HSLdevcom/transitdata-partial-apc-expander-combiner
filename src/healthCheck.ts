@@ -7,7 +7,7 @@ const createHealthCheckServer = (
   { port }: HealthCheckConfig,
   producer: Pulsar.Producer,
   hfpConsumer: Pulsar.Consumer,
-  partialApcConsumer: Pulsar.Consumer
+  partialApcConsumer: Pulsar.Consumer,
 ) => {
   let isHealthSetToOk = false;
   let server: http.Server | undefined = http.createServer((req, res) => {

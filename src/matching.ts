@@ -14,7 +14,7 @@ interface ApcCacheItem {
 }
 
 export const getUniqueVehicleIdFromMqttTopic = (
-  topic: string
+  topic: string,
 ): UniqueVehicleId | undefined => {
   const parts = topic.split("/");
   if (parts.length >= 9) {
@@ -24,7 +24,7 @@ export const getUniqueVehicleIdFromMqttTopic = (
 };
 
 export const getUniqueVehicleIdFromHfpTopic = (
-  topic: hfp.ITopic
+  topic: hfp.ITopic,
 ): UniqueVehicleId | undefined => {
   const parts = topic.uniqueVehicleId.split("/");
   if (parts.length === 2 && parts[0] != null && parts[1] != null) {
@@ -34,7 +34,7 @@ export const getUniqueVehicleIdFromHfpTopic = (
 };
 
 const transformLocToString = (
-  locV2: hfp.Payload.LocationQualityMethod
+  locV2: hfp.Payload.LocationQualityMethod,
 ): string => {
   switch (locV2) {
     case hfp.Payload.LocationQualityMethod.GPS:
@@ -57,7 +57,7 @@ const transformLocToString = (
  */
 const transformVehicleCounts = (
   vehicleCounts: partialApc.Vehiclecounts,
-  vehicleCapacity: number
+  vehicleCapacity: number,
 ): passengerCount.IVehicleCounts => {
   return {
     countQuality: vehicleCounts.countquality,
@@ -81,7 +81,7 @@ const transformVehicleCounts = (
  */
 export const pickLowerQuality = (
   oldQuality: string,
-  newQuality: string
+  newQuality: string,
 ): string => {
   let quality = "other";
   if (oldQuality === "regular" && newQuality === "regular") {
@@ -98,7 +98,7 @@ export const pickLowerQuality = (
 
 export const sumDoorCounts = (
   cachedDoorcounts: partialApc.Doorcount[],
-  newDoorcounts: partialApc.Doorcount[]
+  newDoorcounts: partialApc.Doorcount[],
 ): partialApc.Doorcount[] => {
   type DoorName = string;
   type ClassName = string;
@@ -132,15 +132,15 @@ export const sumDoorCounts = (
 
 const sumApcValues = (
   cachedApc: partialApc.Apc,
-  newApc: partialApc.Apc
+  newApc: partialApc.Apc,
 ): partialApc.Apc => {
   const lowerQuality = pickLowerQuality(
     cachedApc.vehiclecounts.countquality,
-    newApc.vehiclecounts.countquality
+    newApc.vehiclecounts.countquality,
   );
   const doorcounts = sumDoorCounts(
     cachedApc.vehiclecounts.doorcounts,
-    newApc.vehiclecounts.doorcounts
+    newApc.vehiclecounts.doorcounts,
   );
   return {
     ...newApc,
@@ -156,7 +156,7 @@ const expandWithApc = (
   hfpData: hfp.Data,
   mqttTopic: string,
   apcData: partialApc.Apc,
-  vehicleCapacity: number
+  vehicleCapacity: number,
 ): passengerCount.IData => {
   const tst = Math.floor(apcData.tst.getTime() / 1000);
   const payload: passengerCount.IPayload = {
@@ -170,7 +170,7 @@ const expandWithApc = (
         : null,
     vehicleCounts: transformVehicleCounts(
       apcData.vehiclecounts,
-      vehicleCapacity
+      vehicleCapacity,
     ),
     // Override the field oper of the partial APC data as the APC devices likely
     // do not have access to the correct value.
@@ -194,7 +194,7 @@ export const initializeMatching = (
     apcWaitInSeconds,
     vehicleCapacities,
     defaultVehicleCapacity,
-  }: ProcessingConfig
+  }: ProcessingConfig,
 ) => {
   const apcCache = new Map<UniqueVehicleId, ApcCacheItem>();
   const sendingTimers = new Map<UniqueVehicleId, NodeJS.Timeout>();
@@ -207,7 +207,7 @@ export const initializeMatching = (
     try {
       const mqttMessage = mqtt.RawMessage.decode(partialApcMessage.getData());
       const uniqueVehicleId = getUniqueVehicleIdFromMqttTopic(
-        mqttMessage.topic
+        mqttMessage.topic,
       );
       if (uniqueVehicleId !== undefined) {
         const payloadString = mqttMessage.payload.toString();
@@ -218,7 +218,7 @@ export const initializeMatching = (
           } catch (errConvertPartialApc) {
             logger.warn(
               { err: errConvertPartialApc },
-              "Received message did not match the expected partial APC JSON structure. Trying peeled partial APC JSON structure, instead."
+              "Received message did not match the expected partial APC JSON structure. Trying peeled partial APC JSON structure, instead.",
             );
             newApc = peeledPartialApc.Convert.toPeeledPartialApc(payloadString);
           }
@@ -236,26 +236,26 @@ export const initializeMatching = (
         } catch (errConvertPeeledPartialApc) {
           logger.warn(
             { err: errConvertPeeledPartialApc, mqttPayload: payloadString },
-            "Received message did not match the peeled partial APC JSON structure, either"
+            "Received message did not match the peeled partial APC JSON structure, either",
           );
         }
       } else {
         logger.warn(
           { mqttTopic: mqttMessage.topic },
-          "Could not extract unique vehicle ID from MQTT topic"
+          "Could not extract unique vehicle ID from MQTT topic",
         );
       }
     } catch (err) {
       logger.warn(
         { err, partialApcMessage: JSON.stringify(partialApcMessage) },
-        "Something unexpected happened with partialApcMessage"
+        "Something unexpected happened with partialApcMessage",
       );
     }
   };
 
   const expandWithApcAndSend = (
     hfpMessage: Pulsar.Message,
-    sendCallback: (fullApcMessage: Pulsar.ProducerMessage) => void
+    sendCallback: (fullApcMessage: Pulsar.ProducerMessage) => void,
   ): void => {
     try {
       const hfpData = hfp.Data.decode(hfpMessage.getData());
@@ -289,10 +289,10 @@ export const initializeMatching = (
                   hfpData,
                   apcCacheItem.mqttTopic,
                   apcCacheItem.apc,
-                  vehicleCapacity
+                  vehicleCapacity,
                 );
                 const encoded = Buffer.from(
-                  passengerCount.Data.encode(passengerCountData).finish()
+                  passengerCount.Data.encode(passengerCountData).finish(),
                 );
                 const fullApcMessage = {
                   data: encoded,
@@ -312,7 +312,7 @@ export const initializeMatching = (
     } catch (e) {
       logger.warn(
         e,
-        "The HFP message does not conform to the proto definition."
+        "The HFP message does not conform to the proto definition.",
       );
     }
   };
