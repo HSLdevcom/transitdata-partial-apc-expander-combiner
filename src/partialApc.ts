@@ -1,7 +1,7 @@
 /**
  * Generated manually with https://app.quicktype.io/ on 2022-09-01 using
  * anonymized, corrected partial APC JSON data. Function m was also removed
- * manually * as unused.
+ * manually as unused.
  */
 
 // To parse this data:
