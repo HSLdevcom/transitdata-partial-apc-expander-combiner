@@ -117,7 +117,7 @@ const exitGracefully = async (
         timestamp: pino.stdTimeFunctions.isoTime,
         // As logger is started before config is created, read the level from
         // env.
-        level: process.env.PINO_LOG_LEVEL ?? "info",
+        level: process.env["PINO_LOG_LEVEL"] ?? "info",
       },
       pino.destination({ sync: true }),
     );

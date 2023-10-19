@@ -190,7 +190,7 @@ const getDatabaseConfig = (): DatabaseConfig => {
   );
 
   if (!connectionString) {
-    connectionString = secrets.DATABASE_CONNECTION_URI;
+    connectionString = secrets["DATABASE_CONNECTION_URI"];
     if (!connectionString) {
       connectionString = "";
     }
