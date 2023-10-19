@@ -204,8 +204,9 @@ export const initializeMatching = (
     vehicleCapacities.get(uniqueVehicleId) ?? defaultVehicleCapacity;
 
   const updateApcCache = (partialApcMessage: Pulsar.Message): void => {
+    const partialApcMessageData = partialApcMessage.getData();
     try {
-      const mqttMessage = mqtt.RawMessage.decode(partialApcMessage.getData());
+      const mqttMessage = mqtt.RawMessage.decode(partialApcMessageData);
       const uniqueVehicleId = getUniqueVehicleIdFromMqttTopic(
         mqttMessage.topic,
       );
@@ -247,7 +248,13 @@ export const initializeMatching = (
       }
     } catch (err) {
       logger.warn(
-        { err, partialApcMessage: JSON.stringify(partialApcMessage) },
+        {
+          err,
+          partialApcMessageProperties: { ...partialApcMessage.getProperties() },
+          partialApcMessageDataString: partialApcMessageData.toString("utf8"),
+          partialApcMessageEventTimestamp:
+            partialApcMessage.getEventTimestamp(),
+        },
         "Something unexpected happened with partialApcMessage",
       );
     }
