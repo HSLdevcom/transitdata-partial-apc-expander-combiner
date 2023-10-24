@@ -4,8 +4,8 @@ import type { UniqueVehicleId, ProcessingConfig } from "./config";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
-import * as partialApc from "./partialApc";
 import * as peeledPartialApc from "./peeledPartialApc";
+import * as partialApc from "./quicktype/partialApc";
 
 interface ApcCacheItem {
   apc: partialApc.Apc;
@@ -158,7 +158,7 @@ const expandWithApc = (
   apcData: partialApc.Apc,
   vehicleCapacity: number,
 ): passengerCount.IData => {
-  const tst = Math.floor(apcData.tst.getTime() / 1000);
+  const tst = Math.floor(new Date(apcData.tst).getTime() / 1000);
   const payload: passengerCount.IPayload = {
     ...hfpData.payload,
     ...apcData,

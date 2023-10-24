@@ -1,0 +1,18 @@
+{
+  "APC": {
+    "tst": "2023-02-12T11:56:12Z",
+    "lat": 60.833612,
+    "long": 25.174631,
+    "vehiclecounts": {
+      "vehicleload": 0,
+      "doorcounts": [
+        { "door": "1", "count": [{ "class": "adult", "in": 2, "out": 0 }] },
+        { "door": "2", "count": [{ "class": "adult", "in": 0, "out": 3 }] },
+        { "door": "3", "count": [{ "class": "adult", "in": 0, "out": 0 }] }
+      ],
+      "countquality": "regular"
+    },
+    "schemaVersion": "1-1-0",
+    "messageId": "94fdd2b2-b8a7-4abe-b774-7a5db9c311c3"
+  }
+}

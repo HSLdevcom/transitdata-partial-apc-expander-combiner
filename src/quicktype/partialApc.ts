@@ -1,9 +1,4 @@
-/**
- * Generated manually with https://app.quicktype.io/ on 2022-09-01 using
- * anonymized, corrected partial APC JSON data. Function m was also removed
- * manually as unused.
- */
-
+// @ts-nocheck
 // To parse this data:
 //
 //   import { Convert, PartialApc } from "./file";
@@ -18,23 +13,23 @@ export interface PartialApc {
 }
 
 export interface Apc {
-  tst: Date;
   lat: number;
   long: number;
-  vehiclecounts: Vehiclecounts;
-  schemaVersion: string;
   messageId: string;
+  schemaVersion: string;
+  tst: string;
+  vehiclecounts: Vehiclecounts;
 }
 
 export interface Vehiclecounts {
-  vehicleload: number;
-  doorcounts: Doorcount[];
   countquality: string;
+  doorcounts: Doorcount[];
+  vehicleload: number;
 }
 
 export interface Doorcount {
-  door: string;
   count: Count[];
+  door: string;
 }
 
 export interface Count {
@@ -53,19 +48,67 @@ export class Convert {
   public static partialApcToJson(value: PartialApc): string {
     return JSON.stringify(uncast(value, r("PartialApc")), null, 2);
   }
+
+  public static toApc(json: string): Apc {
+    return cast(JSON.parse(json), r("Apc"));
+  }
+
+  public static apcToJson(value: Apc): string {
+    return JSON.stringify(uncast(value, r("Apc")), null, 2);
+  }
+
+  public static toVehiclecounts(json: string): Vehiclecounts {
+    return cast(JSON.parse(json), r("Vehiclecounts"));
+  }
+
+  public static vehiclecountsToJson(value: Vehiclecounts): string {
+    return JSON.stringify(uncast(value, r("Vehiclecounts")), null, 2);
+  }
+
+  public static toDoorcount(json: string): Doorcount {
+    return cast(JSON.parse(json), r("Doorcount"));
+  }
+
+  public static doorcountToJson(value: Doorcount): string {
+    return JSON.stringify(uncast(value, r("Doorcount")), null, 2);
+  }
+
+  public static toCount(json: string): Count {
+    return cast(JSON.parse(json), r("Count"));
+  }
+
+  public static countToJson(value: Count): string {
+    return JSON.stringify(uncast(value, r("Count")), null, 2);
+  }
 }
 
-function invalidValue(typ: any, val: any, key: any = ""): never {
-  if (key) {
-    throw Error(
-      `Invalid value for key "${key}". Expected type ${JSON.stringify(
-        typ,
-      )} but got ${JSON.stringify(val)}`,
-    );
-  }
+function invalidValue(typ: any, val: any, key: any, parent: any = ""): never {
+  const prettyTyp = prettyTypeName(typ);
+  const parentText = parent ? ` on ${parent}` : "";
+  const keyText = key ? ` for key "${key}"` : "";
   throw Error(
-    `Invalid value ${JSON.stringify(val)} for type ${JSON.stringify(typ)}`,
+    `Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(
+      val,
+    )}`,
   );
+}
+
+function prettyTypeName(typ: any): string {
+  if (Array.isArray(typ)) {
+    if (typ.length === 2 && typ[0] === undefined) {
+      return `an optional ${prettyTypeName(typ[1])}`;
+    } else {
+      return `one of [${typ
+        .map((a) => {
+          return prettyTypeName(a);
+        })
+        .join(", ")}]`;
+    }
+  } else if (typeof typ === "object" && typ.literal !== undefined) {
+    return typ.literal;
+  } else {
+    return typeof typ;
+  }
 }
 
 function jsonToJSProps(typ: any): any {
@@ -86,10 +129,16 @@ function jsToJSONProps(typ: any): any {
   return typ.jsToJSON;
 }
 
-function transform(val: any, typ: any, getProps: any, key: any = ""): any {
+function transform(
+  val: any,
+  typ: any,
+  getProps: any,
+  key: any = "",
+  parent: any = "",
+): any {
   function transformPrimitive(typ: string, val: any): any {
     if (typeof typ === typeof val) return val;
-    return invalidValue(typ, val, key);
+    return invalidValue(typ, val, key, parent);
   }
 
   function transformUnion(typs: any[], val: any): any {
@@ -101,17 +150,24 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
         return transform(val, typ, getProps);
       } catch (_) {}
     }
-    return invalidValue(typs, val);
+    return invalidValue(typs, val, key, parent);
   }
 
   function transformEnum(cases: string[], val: any): any {
     if (cases.indexOf(val) !== -1) return val;
-    return invalidValue(cases, val);
+    return invalidValue(
+      cases.map((a) => {
+        return l(a);
+      }),
+      val,
+      key,
+      parent,
+    );
   }
 
   function transformArray(typ: any, val: any): any {
     // val must be an array with no invalid elements
-    if (!Array.isArray(val)) return invalidValue("array", val);
+    if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
     return val.map((el) => transform(el, typ, getProps));
   }
 
@@ -121,7 +177,7 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
     }
     const d = new Date(val);
     if (isNaN(d.valueOf())) {
-      return invalidValue("Date", val);
+      return invalidValue(l("Date"), val, key, parent);
     }
     return d;
   }
@@ -132,7 +188,7 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
     val: any,
   ): any {
     if (val === null || typeof val !== "object" || Array.isArray(val)) {
-      return invalidValue("object", val);
+      return invalidValue(l(ref || "object"), val, key, parent);
     }
     const result: any = {};
     Object.getOwnPropertyNames(props).forEach((key) => {
@@ -140,11 +196,11 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
       const v = Object.prototype.hasOwnProperty.call(val, key)
         ? val[key]
         : undefined;
-      result[prop.key] = transform(v, prop.typ, getProps, prop.key);
+      result[prop.key] = transform(v, prop.typ, getProps, key, ref);
     });
     Object.getOwnPropertyNames(val).forEach((key) => {
       if (!Object.prototype.hasOwnProperty.call(props, key)) {
-        result[key] = transform(val[key], additional, getProps, key);
+        result[key] = transform(val[key], additional, getProps, key, ref);
       }
     });
     return result;
@@ -153,10 +209,12 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
   if (typ === "any") return val;
   if (typ === null) {
     if (val === null) return val;
-    return invalidValue(typ, val);
+    return invalidValue(typ, val, key, parent);
   }
-  if (typ === false) return invalidValue(typ, val);
+  if (typ === false) return invalidValue(typ, val, key, parent);
+  let ref: any = undefined;
   while (typeof typ === "object" && typ.ref !== undefined) {
+    ref = typ.ref;
     typ = typeMap[typ.ref];
   }
   if (Array.isArray(typ)) return transformEnum(typ, val);
@@ -167,7 +225,7 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
       ? transformArray(typ.arrayItems, val)
       : typ.hasOwnProperty("props")
       ? transformObject(getProps(typ), typ.additional, val)
-      : invalidValue(typ, val);
+      : invalidValue(typ, val, key, parent);
   }
   // Numbers can be parsed by Date but shouldn't be.
   if (typ === Date && typeof val !== "number") return transformDate(val);
@@ -182,12 +240,24 @@ function uncast<T>(val: T, typ: any): any {
   return transform(val, typ, jsToJSONProps);
 }
 
+function l(typ: any) {
+  return { literal: typ };
+}
+
 function a(typ: any) {
   return { arrayItems: typ };
 }
 
+function u(...typs: any[]) {
+  return { unionMembers: typs };
+}
+
 function o(props: any[], additional: any) {
   return { props, additional };
+}
+
+function m(additional: any) {
+  return { props: [], additional };
 }
 
 function r(name: string) {
@@ -198,27 +268,27 @@ const typeMap: any = {
   PartialApc: o([{ json: "APC", js: "APC", typ: r("Apc") }], false),
   Apc: o(
     [
-      { json: "tst", js: "tst", typ: Date },
       { json: "lat", js: "lat", typ: 3.14 },
       { json: "long", js: "long", typ: 3.14 },
-      { json: "vehiclecounts", js: "vehiclecounts", typ: r("Vehiclecounts") },
-      { json: "schemaVersion", js: "schemaVersion", typ: "" },
       { json: "messageId", js: "messageId", typ: "" },
+      { json: "schemaVersion", js: "schemaVersion", typ: "" },
+      { json: "tst", js: "tst", typ: "" },
+      { json: "vehiclecounts", js: "vehiclecounts", typ: r("Vehiclecounts") },
     ],
     false,
   ),
   Vehiclecounts: o(
     [
-      { json: "vehicleload", js: "vehicleload", typ: 0 },
-      { json: "doorcounts", js: "doorcounts", typ: a(r("Doorcount")) },
       { json: "countquality", js: "countquality", typ: "" },
+      { json: "doorcounts", js: "doorcounts", typ: a(r("Doorcount")) },
+      { json: "vehicleload", js: "vehicleload", typ: 0 },
     ],
     false,
   ),
   Doorcount: o(
     [
-      { json: "door", js: "door", typ: "" },
       { json: "count", js: "count", typ: a(r("Count")) },
+      { json: "door", js: "door", typ: "" },
     ],
     false,
   ),

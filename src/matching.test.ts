@@ -7,11 +7,11 @@ import {
   pickLowerQuality,
   sumDoorCounts,
 } from "./matching";
-import * as partialApc from "./partialApc";
 import * as peeledPartialApc from "./peeledPartialApc";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
+import * as partialApc from "./quicktype/partialApc";
 
 describe("Get unique vehicle IDs", () => {
   test("Get a unique vehicle ID from a valid MQTT topic", () => {
@@ -301,7 +301,7 @@ describe("Cache and trigger sending", () => {
         APC: {
           schemaVersion: "1-1-0",
           messageId: "06e64ba5-e555-4e2f-b8b4-b57bc69e8b99",
-          tst: new Date("2022-08-15T10:57:08.647Z"),
+          tst: "2022-08-15T10:57:08.647Z",
           lat: 60.1967,
           long: 24.9435,
           vehiclecounts: {
@@ -326,7 +326,7 @@ describe("Cache and trigger sending", () => {
       mqttTopic: "/hfp/v2/journey/ongoing/apc/bus/0022/00758",
       eventTimestamp: 1660731500000,
     });
-    const lastPartialApcTst = new Date("2022-08-15T10:57:09.942Z");
+    const lastPartialApcTst = "2022-08-15T10:57:09.942Z";
     const partialApcMessage2 = mockPartialApcMessage({
       content: {
         APC: {
@@ -420,8 +420,8 @@ describe("Cache and trigger sending", () => {
           dir: "2",
           oper: 22,
           veh: 758,
-          tst: Math.floor(lastPartialApcTst.getTime() / 1000),
-          tsi: Math.floor(lastPartialApcTst.getTime() / 1000),
+          tst: Math.floor(new Date(lastPartialApcTst).getTime() / 1000),
+          tsi: Math.floor(new Date(lastPartialApcTst).getTime() / 1000),
           lat: 60.1968,
           long: 24.9434,
           odo: 2147483647,
