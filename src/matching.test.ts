@@ -7,7 +7,6 @@ import {
   pickLowerQuality,
   sumDoorCounts,
 } from "./matching";
-import * as peeledPartialApc from "./peeledPartialApc";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
@@ -45,22 +44,12 @@ describe("Get unique vehicle IDs", () => {
 describe("Convert anonymized data", () => {
   const convertToPartial = (s: string): partialApc.PartialApc =>
     partialApc.Convert.toPartialApc(s);
-  const convertToPeeled = (s: string): peeledPartialApc.PeeledPartialApc =>
-    peeledPartialApc.Convert.toPeeledPartialApc(s);
 
   describe("partialApc", () => {
     test("First fixed data example", () => {
       const mqttPayload =
         '{"APC":{"tst":"2022-07-05T09:10:40.123Z","lat":55.55517,"long":12.918473,"vehiclecounts":{"vehicleload":3,"doorcounts":[{"door":"door1","count":[{"class":"adult","in":1,"out":0}]},{"door":"door2","count":[{"class":"adult","in":0,"out":0}]},{"door":"door3","count":[{"class":"adult","in":0,"out":2}]}],"countquality":"regular"},"schemaVersion":"1-1-0","messageId":"05093457020702856023487297fe2b28"}}';
       expect(() => convertToPartial(mqttPayload)).not.toThrow();
-    });
-  });
-
-  describe("peeledPartialApc", () => {
-    test("First spec-violating example", () => {
-      const mqttPayload =
-        '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}';
-      expect(() => convertToPeeled(mqttPayload)).not.toThrow();
     });
   });
 });
@@ -220,7 +209,7 @@ const mockPartialApcMessage = ({
   mqttTopic,
   eventTimestamp,
 }: {
-  content: partialApc.PartialApc | peeledPartialApc.PeeledPartialApc;
+  content: partialApc.PartialApc;
   mqttTopic: string;
   eventTimestamp: number;
 }): Pulsar.Message => {
@@ -462,153 +451,6 @@ describe("Cache and trigger sending", () => {
         const expectedData = passengerCount.Data.decode(
           expectedApcMessage.data,
         );
-        expect(resultData.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
-          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
-        );
-        delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
-        delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
-        expect(resultData).toStrictEqual(expectedData);
-        expect(result.eventTimestamp).toStrictEqual(
-          expectedApcMessage.eventTimestamp,
-        );
-        done();
-      } catch (error) {
-        done(error);
-      }
-    });
-  });
-
-  // The code to test uses a callback instead of a Promise so we should use the
-  // done callback to test it.
-  // eslint-disable-next-line jest/no-done-callback
-  test("Cache one anonymized, peeled partial APC message and form a full APC message from an HFP message", (done) => {
-    const logger = pino({
-      name: "test-logger",
-      timestamp: pino.stdTimeFunctions.isoTime,
-      sync: true,
-    });
-    const mockWarn = jest
-      .spyOn(logger, "warn")
-      .mockImplementation(() => {})
-      .mockName("warn");
-    const processingConfig = {
-      // 5000 ms is the normal jest timeout. Let's go under that.
-      apcWaitInSeconds: 0.1,
-      vehicleCapacities: new Map([["0018/00817", 67]]),
-      defaultVehicleCapacity: 78,
-    };
-    const { updateApcCache, expandWithApcAndSend } = initializeMatching(
-      logger,
-      processingConfig,
-    );
-    const lastPartialApcTst = new Date("2022-08-30T13:20:44Z");
-    const peeledPartialApcMessage = mockPartialApcMessage({
-      content: peeledPartialApc.Convert.toPeeledPartialApc(
-        '{"tst":"2022-08-30T13:20:44Z","lat":60.280113,"long":25.293034,"vehiclecounts":{"vehicleload":0,"doorcounts":[{"door":"0","count":[{"class":"adult","in":1,"out":0}]},{"door":"1","count":[{"class":"adult","in":0,"out":1}]},{"door":"2","count":[{"class":"adult","in":0,"out":3}]}],"countquality":"regular"},"schemaVersion":"1-1-0","oper":18,"veh":817,"messageId":"13ab284528bc53a565848dea649cbd71"}',
-      ),
-      mqttTopic: "/hfp/v2/journey/ongoing/apc/bus/0018/00817",
-      eventTimestamp: 1660731500000,
-    });
-    const hfpMessage = mockHfpMessage({
-      hfpData: {
-        SchemaVersion: 1,
-        topic: {
-          SchemaVersion: 1,
-          receivedAt: 1660731510000,
-          topicPrefix: "/hfp/",
-          topicVersion: "v2",
-          journeyType: hfp.Topic.JourneyType.journey,
-          temporalType: hfp.Topic.TemporalType.ongoing,
-          eventType: hfp.Topic.EventType.PDE,
-          transportMode: hfp.Topic.TransportMode.bus,
-          operatorId: 18,
-          vehicleNumber: 817,
-          uniqueVehicleId: "18/817",
-          routeId: "9994K",
-          directionId: 2,
-          headsign: "Söderkulla",
-          startTime: "16:15",
-          nextStop: "9210204",
-          geohashLevel: 4,
-          latitude: 60.28,
-          longitude: 25.293,
-        },
-        payload: {
-          SchemaVersion: 1,
-          desi: "994K",
-          dir: "2",
-          oper: 6,
-          veh: 817,
-          tst: "2022-08-30T13:20:57.967Z",
-          tsi: 1661865657,
-          spd: 12.0,
-          hdg: 35,
-          lat: 60.280918,
-          long: 25.29396,
-          acc: 0.42,
-          dl: -34,
-          odo: 2147483647,
-          drst: null,
-          oday: "2022-08-30",
-          jrn: 28,
-          line: 747,
-          start: "16:15",
-          loc: hfp.Payload.LocationQualityMethod.GPS,
-          stop: 9210204,
-          route: "9994K",
-          occu: 0,
-          ttarr: "2022-08-30T13:20:00.000Z",
-          ttdep: "2022-08-30T13:20:00.000Z",
-        },
-      },
-      eventTimestamp: 1660731510000,
-    });
-    const expectedApcMessage = mockApcMessage({
-      apcData: {
-        SchemaVersion: 1,
-        topic: "/hfp/v2/journey/ongoing/apc/bus/0018/00817",
-        payload: {
-          desi: "994K",
-          dir: "2",
-          // The running operator is different.
-          oper: 6,
-          veh: 817,
-          tst: Math.floor(lastPartialApcTst.getTime() / 1000),
-          tsi: Math.floor(lastPartialApcTst.getTime() / 1000),
-          lat: 60.280113,
-          long: 25.293034,
-          odo: 2147483647,
-          oday: "2022-08-30",
-          jrn: 28,
-          line: 747,
-          start: "16:15",
-          loc: "GPS",
-          stop: 9210204,
-          route: "9994K",
-          vehicleCounts: {
-            countQuality: "regular",
-            vehicleLoad: 0,
-            vehicleLoadRatio: 0,
-            doorCounts: [
-              { door: "0", count: [{ clazz: "adult", in: 1, out: 0 }] },
-              { door: "1", count: [{ clazz: "adult", in: 0, out: 1 }] },
-              { door: "2", count: [{ clazz: "adult", in: 0, out: 3 }] },
-            ],
-          },
-        },
-      },
-      eventTimestamp: 1660731500000,
-    });
-    updateApcCache(peeledPartialApcMessage);
-    expandWithApcAndSend(hfpMessage, (result) => {
-      expect(mockWarn.mock.calls.length).toBe(1);
-      try {
-        const resultData = passengerCount.Data.decode(result.data);
-        const expectedData = passengerCount.Data.decode(
-          expectedApcMessage.data,
-        );
-        // Compare vehicleLoadRatio approximately and then remove it to compare
-        // the rest exactly.
         expect(resultData.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
           expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
         );

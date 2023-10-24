@@ -4,7 +4,6 @@ import type { UniqueVehicleId, ProcessingConfig } from "./config";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
-import * as peeledPartialApc from "./peeledPartialApc";
 import * as partialApc from "./quicktype/partialApc";
 
 interface ApcCacheItem {
@@ -212,17 +211,16 @@ export const initializeMatching = (
       );
       if (uniqueVehicleId !== undefined) {
         const payloadString = mqttMessage.payload.toString();
+        let newApc;
         try {
-          let newApc;
-          try {
-            newApc = partialApc.Convert.toPartialApc(payloadString).APC;
-          } catch (errConvertPartialApc) {
-            logger.warn(
-              { err: errConvertPartialApc },
-              "Received message did not match the expected partial APC JSON structure. Trying peeled partial APC JSON structure, instead.",
-            );
-            newApc = peeledPartialApc.Convert.toPeeledPartialApc(payloadString);
-          }
+          newApc = partialApc.Convert.toPartialApc(payloadString).APC;
+        } catch (errConvertPartialApc) {
+          logger.warn(
+            { err: errConvertPartialApc },
+            "Received message did not match the expected partial APC JSON structure. Ignoring.",
+          );
+        }
+        if (newApc != null) {
           const eventTimestamp = partialApcMessage.getEventTimestamp();
           const existingApcCacheItem = apcCache.get(uniqueVehicleId);
           if (existingApcCacheItem !== undefined) {
@@ -234,11 +232,6 @@ export const initializeMatching = (
             mqttTopic: mqttMessage.topic,
             eventTimestamp,
           });
-        } catch (errConvertPeeledPartialApc) {
-          logger.warn(
-            { err: errConvertPeeledPartialApc, mqttPayload: payloadString },
-            "Received message did not match the peeled partial APC JSON structure, either",
-          );
         }
       } else {
         logger.warn(
