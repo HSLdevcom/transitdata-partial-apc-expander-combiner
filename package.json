@@ -59,7 +59,7 @@
     "dotenv": "^16.3.1",
     "pg": "^8.11.1",
     "pg-promise": "^11.5.4",
-    "pino": "^8.0.0",
+    "pino": "^8.16.1",
     "protobufjs": "^7.0.0",
     "pulsar-client": "^1.8.2"
   },
