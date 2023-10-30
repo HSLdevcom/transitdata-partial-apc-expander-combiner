@@ -14,7 +14,10 @@ interface Vehicle {
 }
 
 function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
-  return `${capability.operator_id}/${capability.vehicle_id.padStart(5, "0")}`;
+  return `${capability.operator_id.padStart(
+    4,
+    "0",
+  )}/${capability.vehicle_id.padStart(5, "0")}`;
 }
 
 const getEquipmentFromDatabase = async (
