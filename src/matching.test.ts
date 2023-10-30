@@ -267,11 +267,14 @@ describe("Cache and trigger sending", () => {
   // done callback to test it.
   // eslint-disable-next-line jest/no-done-callback
   test("Cache two partial APC messages and form a full APC message from an HFP message", (done) => {
-    const logger = pino({
-      name: "test-logger",
-      timestamp: pino.stdTimeFunctions.isoTime,
-      sync: true,
-    });
+    const logger = pino(
+      {
+        name: "test-logger",
+        timestamp: pino.stdTimeFunctions.isoTime,
+        level: process.env["PINO_LOG_LEVEL"] ?? "info",
+      },
+      pino.destination({ sync: true }),
+    );
     const processingConfig = {
       // 5000 ms is the normal jest timeout. Let's go under that.
       apcWaitInSeconds: 0.1,
