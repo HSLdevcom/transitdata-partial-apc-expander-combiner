@@ -1,47 +1,17 @@
-import type pino from "pino";
-import Pulsar from "pulsar-client";
 import { secrets } from "docker-secret";
 import dotenv = require("dotenv");
-import capabilities, {
+import type pino from "pino";
+import Pulsar from "pulsar-client";
+import capabilities from "./generateVehicleCapabilities";
+import type {
+  Config,
+  DatabaseConfig,
+  ProcessingConfig,
+  PulsarConfig,
   VehicleCapacityMap,
-} from "./generateVehicleCapabilities";
+} from "./types";
 
 dotenv.config();
-
-export type UniqueVehicleId = string;
-
-export interface ProcessingConfig {
-  apcWaitInSeconds: number;
-  vehicleCapacities: VehicleCapacityMap;
-  defaultVehicleCapacity: number;
-}
-
-export interface PulsarConfig {
-  clientConfig: Pulsar.ClientConfig;
-  producerConfig: Pulsar.ProducerConfig;
-  hfpConsumerConfig: Pulsar.ConsumerConfig;
-  partialApcConsumerConfig: Pulsar.ConsumerConfig;
-}
-
-export interface HealthCheckConfig {
-  port: number;
-}
-
-export interface DatabaseConfig {
-  connectionString: string;
-}
-
-export interface VehicleTypeConfig {
-  vehicleTypes: string;
-}
-
-export interface Config {
-  processing: ProcessingConfig;
-  pulsar: PulsarConfig;
-  healthCheck: HealthCheckConfig;
-  database: DatabaseConfig;
-  vehicleTypes: VehicleTypeConfig;
-}
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
@@ -257,13 +227,15 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   };
 };
 
-export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: getDatabaseConfig(),
   vehicleTypes: getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });
+
+export default getConfig;
 
 // To run locally:
 

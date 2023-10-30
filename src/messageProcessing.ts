@@ -1,6 +1,6 @@
 import type pino from "pino";
 import type Pulsar from "pulsar-client";
-import type { ProcessingConfig } from "./config";
+import type { ProcessingConfig } from "./types";
 import { initializeMatching } from "./matching";
 
 const keepReactingToHfp = async (

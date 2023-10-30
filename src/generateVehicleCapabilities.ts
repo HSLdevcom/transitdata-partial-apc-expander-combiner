@@ -1,17 +1,11 @@
-import type { DatabaseConfig, VehicleTypeConfig } from "./config";
+import type {
+  DatabaseConfig,
+  UniqueVehicleId,
+  Vehicle,
+  VehicleTypeCapacityMap,
+  VehicleTypeConfig,
+} from "./types";
 import db from "./db";
-
-export type VehicleType = string;
-export type UniqueVehicleId = string;
-
-export type VehicleTypeCapacityMap = Map<VehicleType, number>;
-export type VehicleCapacityMap = Map<UniqueVehicleId, number | undefined>;
-
-interface Vehicle {
-  vehicle_id: string;
-  operator_id: string;
-  type: string;
-}
 
 function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
   return `${capability.operator_id.padStart(

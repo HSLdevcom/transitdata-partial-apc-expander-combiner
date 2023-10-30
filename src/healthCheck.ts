@@ -1,7 +1,7 @@
 import http from "node:http";
 import util from "node:util";
 import type Pulsar from "pulsar-client";
-import type { HealthCheckConfig } from "./config";
+import type { HealthCheckConfig } from "./types";
 
 const createHealthCheckServer = (
   { port }: HealthCheckConfig,

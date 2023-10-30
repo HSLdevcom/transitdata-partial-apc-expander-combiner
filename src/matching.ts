@@ -1,6 +1,6 @@
 import type pino from "pino";
 import type Pulsar from "pulsar-client";
-import type { UniqueVehicleId, ProcessingConfig } from "./config";
+import type { UniqueVehicleId, ProcessingConfig } from "./types";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import { passengerCount } from "./protobuf/passengerCount";
