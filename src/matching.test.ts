@@ -275,9 +275,9 @@ describe("Cache and trigger sending", () => {
       },
       pino.destination({ sync: true }),
     );
+    jest.useFakeTimers();
     const processingConfig = {
-      // 5000 ms is the normal jest timeout. Let's go under that.
-      apcWaitInSeconds: 0.1,
+      apcWaitInSeconds: 15,
       vehicleCapacities: new Map([
         ["0001/00001", 67],
         ["0012/00123", 56],
@@ -468,5 +468,6 @@ describe("Cache and trigger sending", () => {
         done(error);
       }
     });
+    jest.runAllTimers();
   });
 });
