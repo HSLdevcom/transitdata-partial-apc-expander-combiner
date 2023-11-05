@@ -1,13 +1,15 @@
 import type {
   DatabaseConfig,
   UniqueVehicleId,
-  Vehicle,
+  EquipmentFromDatabase,
   VehicleTypeCapacityMap,
   VehicleTypeConfig,
 } from "./types";
 import db from "./db";
 
-function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
+function getUniqueVehicleId(
+  capability: EquipmentFromDatabase,
+): UniqueVehicleId {
   return `${capability.operator_id.padStart(
     4,
     "0",
@@ -16,7 +18,7 @@ function getUniqueVehicleId(capability: Vehicle): UniqueVehicleId {
 
 const getEquipmentFromDatabase = async (
   databaseConfig: DatabaseConfig,
-): Promise<Vehicle[]> => {
+): Promise<EquipmentFromDatabase[]> => {
   return db(databaseConfig.connectionString).many(
     "SELECT vehicle_id, operator_id, type FROM equipment",
   );
@@ -26,7 +28,7 @@ const getCapacities = async (
   databaseConfig: DatabaseConfig,
   vehicleTypeConfig: VehicleTypeConfig,
 ) => {
-  const capabilitiesList: Vehicle[] =
+  const capabilitiesList: EquipmentFromDatabase[] =
     await getEquipmentFromDatabase(databaseConfig);
   const capabilitiesMap: Map<UniqueVehicleId, number | undefined> = new Map();
 

@@ -6,7 +6,7 @@ export type UniqueVehicleId = string;
 export type VehicleTypeCapacityMap = Map<VehicleType, number>;
 export type VehicleCapacityMap = Map<UniqueVehicleId, number | undefined>;
 
-export interface Vehicle {
+export interface EquipmentFromDatabase {
   vehicle_id: string;
   operator_id: string;
   type: string;
