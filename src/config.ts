@@ -1,5 +1,5 @@
 import { secrets } from "docker-secret";
-import dotenv = require("dotenv");
+import dotenv from "dotenv";
 import type pino from "pino";
 import Pulsar from "pulsar-client";
 import capabilities from "./generateVehicleCapabilities";

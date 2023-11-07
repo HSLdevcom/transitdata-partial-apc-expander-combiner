@@ -1,6 +1,6 @@
 import pino from "pino";
 import type Pulsar from "pulsar-client";
-import dotenv = require("dotenv");
+import dotenv from "dotenv";
 import getConfig from "./config";
 import createHealthCheckServer from "./healthCheck";
 import keepProcessingMessages from "./messageProcessing";
