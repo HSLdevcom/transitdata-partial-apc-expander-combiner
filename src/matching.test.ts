@@ -550,13 +550,11 @@ describe("Test using realistic, anonymized data dump extracts", () => {
     L extends number,
     T extends number[] = [],
   > = T["length"] extends L ? T[number] : Indices<L, [T["length"], ...T]>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type LengthAtLeast<T extends readonly any[], L extends number> = Pick<
+  type LengthAtLeast<T extends readonly unknown[], L extends number> = Pick<
     Required<T>,
     Indices<L>
   >;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  function hasLengthAtLeast<T extends readonly any[], L extends number>(
+  function hasLengthAtLeast<T extends readonly unknown[], L extends number>(
     arr: T,
     len: L,
   ): arr is T & LengthAtLeast<T, L> {
