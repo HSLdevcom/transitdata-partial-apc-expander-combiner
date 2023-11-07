@@ -265,7 +265,7 @@ export const initializeMatching = (
           if (hfpData.topic.journeyType === hfp.Topic.JourneyType.deadrun) {
             apcCache.delete(uniqueVehicleId);
           } else if (
-            hfpData.topic?.eventType != null &&
+            hfpData.topic.eventType != null &&
             [
               hfp.Topic.EventType.PDE,
               hfp.Topic.EventType.DEP,

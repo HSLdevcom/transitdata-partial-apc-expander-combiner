@@ -30,7 +30,7 @@ const getCapacities = async (
 ) => {
   const capabilitiesList: EquipmentFromDatabase[] =
     await getEquipmentFromDatabase(databaseConfig);
-  const capabilitiesMap: Map<UniqueVehicleId, number | undefined> = new Map();
+  const capabilitiesMap = new Map<UniqueVehicleId, number | undefined>();
 
   const capacitiesByVehicleTypeJson = JSON.parse(
     vehicleTypeConfig.vehicleTypes,

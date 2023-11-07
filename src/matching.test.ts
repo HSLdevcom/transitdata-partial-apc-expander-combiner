@@ -455,9 +455,15 @@ describe("Cache and trigger sending", () => {
         const expectedData = passengerCount.Data.decode(
           expectedApcMessage.data,
         );
-        expect(resultData.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
-          expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
-        );
+        expect(
+          expectedData.payload.vehicleCounts?.vehicleLoadRatio,
+        ).toBeDefined();
+        if (expectedData.payload.vehicleCounts?.vehicleLoadRatio != null) {
+          // eslint-disable-next-line jest/no-conditional-expect
+          expect(
+            resultData.payload.vehicleCounts?.vehicleLoadRatio,
+          ).toBeCloseTo(expectedData.payload.vehicleCounts.vehicleLoadRatio);
+        }
         delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
         delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
         expect(resultData).toStrictEqual(expectedData);
@@ -524,11 +530,12 @@ describe("Cache and trigger sending", () => {
 describe("Test using realistic, anonymized data dump extracts", () => {
   type MqttDumpLine = `${string} ${string} {${string}`;
 
-  type MqttHfpPayload = {
-    [key: string]: Omit<hfp.IPayload, "loc" | "SchemaVersion"> & {
+  type MqttHfpPayload = Record<
+    string,
+    Omit<hfp.IPayload, "loc" | "SchemaVersion"> & {
       loc: string;
-    };
-  };
+    }
+  >;
 
   interface TimedTestMessage {
     message: Pulsar.Message;
@@ -762,14 +769,15 @@ describe("Test using realistic, anonymized data dump extracts", () => {
   ): {
     timestamp: Date;
     topicString: string;
-    payloadObject: { [key: string]: unknown };
+    payloadObject: Record<string, unknown>;
   } => {
     const othersAndPayload = line.split("{");
     if (hasLengthAtLeast(othersAndPayload, 2)) {
       const payloadString = `{${othersAndPayload.slice(1).join("{")}`;
-      const payloadObject = JSON.parse(payloadString) as {
-        [key: string]: unknown;
-      };
+      const payloadObject = JSON.parse(payloadString) as Record<
+        string,
+        unknown
+      >;
       const timestampAndTopic = othersAndPayload[0].split(" ");
       if (hasLengthAtLeast(timestampAndTopic, 2)) {
         const timestamp = new Date(timestampAndTopic[0]);
@@ -988,36 +996,48 @@ describe("Test using realistic, anonymized data dump extracts", () => {
     let callbackCount = 0;
     /* eslint-disable jest/no-conditional-expect */
     timedTestMessages.forEach((message) => {
-      if (message.type === "partialApc") {
-        updateApcCache(message.message);
-      } else if (message.type === "hfp") {
-        expandWithApcAndSend(message.message, (result) => {
-          const expectedApcMessage = expectedApcMessages[callbackCount];
-          callbackCount += 1;
-          if (expectedApcMessage != null) {
-            const resultData = passengerCount.Data.decode(result.data);
-            const expectedData = passengerCount.Data.decode(
-              expectedApcMessage.data,
-            );
-            expect(
-              resultData.payload.vehicleCounts?.vehicleLoadRatio,
-            ).toBeCloseTo(
-              expectedData.payload.vehicleCounts?.vehicleLoadRatio as number,
-            );
-            delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
-            delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
-            expect(resultData).toStrictEqual(expectedData);
-            expect(result.eventTimestamp).toStrictEqual(
-              expectedApcMessage.eventTimestamp,
-            );
-          } else {
-            throw new Error(
-              `We expected ${expectedApcMessages.length} APC messages but there were ${callbackCount} callback calls`,
-            );
-          }
-        });
-      } else {
-        throw new Error("We should not get here");
+      switch (message.type) {
+        case "partialApc":
+          updateApcCache(message.message);
+          break;
+        case "hfp":
+          expandWithApcAndSend(message.message, (result) => {
+            const expectedApcMessage = expectedApcMessages[callbackCount];
+            callbackCount += 1;
+            if (expectedApcMessage != null) {
+              const resultData = passengerCount.Data.decode(result.data);
+              const expectedData = passengerCount.Data.decode(
+                expectedApcMessage.data,
+              );
+              expect(
+                expectedData.payload.vehicleCounts?.vehicleLoadRatio,
+              ).toBeDefined();
+              if (
+                expectedData.payload.vehicleCounts?.vehicleLoadRatio != null
+              ) {
+                expect(
+                  resultData.payload.vehicleCounts?.vehicleLoadRatio,
+                ).toBeCloseTo(
+                  expectedData.payload.vehicleCounts.vehicleLoadRatio,
+                );
+              }
+              delete resultData.payload.vehicleCounts?.vehicleLoadRatio;
+              delete expectedData.payload.vehicleCounts?.vehicleLoadRatio;
+              expect(resultData).toStrictEqual(expectedData);
+              expect(result.eventTimestamp).toStrictEqual(
+                expectedApcMessage.eventTimestamp,
+              );
+            } else {
+              throw new Error(
+                `We expected ${expectedApcMessages.length} APC messages but there were ${callbackCount} callback calls`,
+              );
+            }
+          });
+          break;
+        default: {
+          const exhaustiveCheck: never = message.type;
+          throw new Error(String(exhaustiveCheck));
+        }
       }
       jest.advanceTimersByTime(message.feedWaitInMilliseconds);
     });

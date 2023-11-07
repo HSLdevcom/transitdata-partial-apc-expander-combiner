@@ -148,14 +148,24 @@ const exitGracefully = async (
 
     try {
       // Handle different kinds of exits.
-      process.on("beforeExit", () => exitHandler(1, new Error("beforeExit")));
-      process.on("unhandledRejection", (reason) =>
-        exitHandler(1, transformUnknownToError(reason)),
-      );
-      process.on("uncaughtException", (err) => exitHandler(1, err));
-      process.on("SIGINT", (signal) => exitHandler(130, new Error(signal)));
-      process.on("SIGQUIT", (signal) => exitHandler(131, new Error(signal)));
-      process.on("SIGTERM", (signal) => exitHandler(143, new Error(signal)));
+      process.on("beforeExit", () => {
+        exitHandler(1, new Error("beforeExit"));
+      });
+      process.on("unhandledRejection", (reason) => {
+        exitHandler(1, transformUnknownToError(reason));
+      });
+      process.on("uncaughtException", (err) => {
+        exitHandler(1, err);
+      });
+      process.on("SIGINT", (signal) => {
+        exitHandler(130, new Error(signal));
+      });
+      process.on("SIGQUIT", (signal) => {
+        exitHandler(131, new Error(signal));
+      });
+      process.on("SIGTERM", (signal) => {
+        exitHandler(143, new Error(signal));
+      });
 
       logger.info("Read configuration");
       const config = await getConfig(logger);
