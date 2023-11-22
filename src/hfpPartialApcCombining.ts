@@ -1,7 +1,7 @@
 import { hfp } from "./protobuf/hfp";
-import * as partialApc from "./quicktype/partialApc";
 import { passengerCount } from "./protobuf/passengerCount";
-import { PartialApcItem } from "./types";
+import * as partialApc from "./quicktype/partialApc";
+import type { PartialApcItem } from "./types";
 
 const transformLocToString = (
   locV2: hfp.Payload.LocationQualityMethod,
