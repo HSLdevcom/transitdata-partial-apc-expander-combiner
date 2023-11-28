@@ -1,5 +1,5 @@
-import assert from "node:assert";
 import { Heap } from "heap-js";
+import assert from "node:assert";
 
 /**
  * The function comparable defines the priority order between two items in the
