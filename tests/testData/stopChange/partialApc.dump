@@ -1,0 +1,1 @@
+2023-10-29T13:25:01.004739Z /hfp/v2/journey/ongoing/apc-partial/bus/0012/01913 {"APC":{"tst":"2023-10-29T13:24:56Z","lat":60.17172,"long":24.924236,"vehiclecounts":{"vehicleload":12,"doorcounts":[{"door":"2","count":[{"class":"adult","in":1,"out":4}]}],"countquality":"regular"},"schemaVersion":"1-1-0","messageId":"d3d03700-9187-4ea8-b8b1-43ce08d48489"}}
