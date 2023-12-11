@@ -1,0 +1,78 @@
+[
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0018/00679",
+      "payload": {
+        "desi": "61",
+        "dir": "2",
+        "oper": 6,
+        "veh": 679,
+        "tst": 1698587361,
+        "tsi": 1698587361,
+        "lat": 60.170868,
+        "long": 24.943386,
+        "odo": 16333,
+        "oday": "2023-10-29",
+        "jrn": 513,
+        "line": 973,
+        "start": "14:52",
+        "loc": "GPS",
+        "stop": 1020201,
+        "route": "1061",
+        "vehicleCounts": {
+          "vehicleLoad": 2,
+          "vehicleLoadRatio": 0.02564103,
+          "doorCounts": [
+            { "door": "1", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            {
+              "door": "2",
+              "count": [{ "clazz": "adult", "in": 0, "out": 10 }]
+            },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 3 }] }
+          ],
+          "countQuality": "regular"
+        }
+      }
+    },
+    "eventTimestamp": 1698587365784
+  },
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0018/00679",
+      "payload": {
+        "desi": "66",
+        "dir": "1",
+        "oper": 6,
+        "veh": 679,
+        "tst": 1698587361,
+        "tsi": 1698587361,
+        "lat": 60.170868,
+        "long": 24.943386,
+        "odo": 132,
+        "oday": "2023-10-29",
+        "jrn": 392,
+        "line": 84,
+        "start": "15:46",
+        "loc": "ODO",
+        "stop": 1020122,
+        "route": "1066",
+        "vehicleCounts": {
+          "vehicleLoad": 20,
+          "vehicleLoadRatio": 0.2564103,
+          "doorCounts": [
+            {
+              "door": "1",
+              "count": [{ "clazz": "adult", "in": 17, "out": 0 }]
+            },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 1, "out": 0 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] }
+          ],
+          "countQuality": "regular"
+        }
+      }
+    },
+    "eventTimestamp": 1698587365784
+  }
+]
