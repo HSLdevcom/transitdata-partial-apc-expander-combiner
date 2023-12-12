@@ -3,7 +3,13 @@ import type Pulsar from "pulsar-client";
 import { hfp } from "./protobuf/hfp";
 import { mqtt } from "./protobuf/mqtt";
 import * as partialApc from "./quicktype/partialApc";
-import type { QueueMessage, UniqueVehicleId, VehicleState } from "./types";
+import type {
+  HfpInboxQueueMessage,
+  PartialApcInboxQueueMessage,
+  UniqueVehicleId,
+  VehicleJourneyState,
+} from "./types";
+import decodeWithoutDefaults from "./util/protobufUtil";
 
 export const getUniqueVehicleIdFromHfpTopic = (
   topic: hfp.ITopic,
@@ -25,39 +31,29 @@ export const getUniqueVehicleIdFromMqttTopic = (
   return undefined;
 };
 
-const transformHfpToVehicleState = (
+export const transformVehicleJourneyHfpToVehicleJourneyState = (
   logger: pino.Logger,
-  hfpData: hfp.Data,
-): VehicleState | undefined => {
-  let result;
-  if (hfpData.topic?.temporalType !== hfp.Topic.TemporalType.ongoing) {
-    logger.debug(
-      { hfpData },
-      "HFP message temporal type is upcoming. Dropping the message.",
-    );
-    return result;
-  }
-  // Treat signoff as deadrun.
-  if (hfpData.topic.journeyType !== hfp.Topic.JourneyType.journey) {
-    return "deadrun";
-  }
-  const { startTime, routeId, directionId, nextStop } = hfpData.topic;
-  const { oday, start, route, dir, stop } = hfpData.payload;
+  hfpData: hfp.IData,
+  hfpDataTopic: hfp.ITopic,
+  hfpDataPayload: hfp.IPayload,
+): VehicleJourneyState | undefined => {
+  const { startTime, routeId, directionId, nextStop } = hfpDataTopic;
+  const { oday, start, route, dir, stop } = hfpDataPayload;
   const resultOperatingDay = oday;
   if (resultOperatingDay == null) {
     logger.warn(
       { hfpData },
       "HFP message payload is missing oday. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   const resultStartTime = startTime ?? start;
   if (resultStartTime == null) {
     logger.warn(
       { hfpData },
-      "HFP message topic and payload are missing start time",
+      "HFP message topic and payload are missing start time. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   const resultRoute = routeId ?? route;
   if (resultRoute == null) {
@@ -65,7 +61,7 @@ const transformHfpToVehicleState = (
       { hfpData },
       "HFP message topic and payload are missing route. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   let resultDirection = directionId;
   const payloadDirection = dir != null ? parseInt(dir, 10) : null;
@@ -79,25 +75,25 @@ const transformHfpToVehicleState = (
       { hfpData },
       "HFP message topic and payload are missing direction. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   // currentStop is regularly missing so do not warn about it.
-  const currentStop = stop?.toString();
+  const currentStop = stop != null ? stop.toString() : undefined;
   if (currentStop == null) {
     logger.debug(
       { hfpData },
       "HFP message payload is missing current stop. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   if (nextStop == null) {
     logger.warn(
       { hfpData },
       "HFP message topic is missing next stop. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
-  result = {
+  return {
     vehicleJourney: {
       operatingDay: resultOperatingDay,
       startTime: resultStartTime,
@@ -109,21 +105,19 @@ const transformHfpToVehicleState = (
       nextStop,
     },
   };
-  return result;
 };
 
 export const parseHfpPulsarMessage = (
   logger: pino.Logger,
   message: Pulsar.Message,
-): QueueMessage | undefined => {
-  let result;
+): HfpInboxQueueMessage | undefined => {
   const messageData = message.getData();
   const eventTimestamp = message.getEventTimestamp();
   const properties = { ...message.getProperties() };
   const messageId = message.getMessageId();
-  let hfpData;
+  let hfpData: hfp.IData | undefined;
   try {
-    hfpData = hfp.Data.decode(message.getData());
+    hfpData = decodeWithoutDefaults(hfp.Data, message.getData());
   } catch (err) {
     logger.warn(
       {
@@ -137,7 +131,7 @@ export const parseHfpPulsarMessage = (
     );
   }
   if (hfpData == null) {
-    return result;
+    return undefined;
   }
   const { topic } = hfpData;
   if (topic == null) {
@@ -150,7 +144,7 @@ export const parseHfpPulsarMessage = (
       },
       "The HFP message does not have an MQTT topic. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
   const uniqueVehicleId = getUniqueVehicleIdFromHfpTopic(topic);
   if (uniqueVehicleId == null) {
@@ -164,7 +158,28 @@ export const parseHfpPulsarMessage = (
       },
       "The MQTT topic of the HFP message does not contain the unique vehicle ID. Dropping the message.",
     );
-    return result;
+    return undefined;
+  }
+
+  if (hfpData.topic?.temporalType !== hfp.Topic.TemporalType.ongoing) {
+    logger.debug(
+      { hfpData },
+      "HFP message temporal type is upcoming. Dropping the message.",
+    );
+    return undefined;
+  }
+  let { journeyType } = hfpData.topic;
+  if (journeyType !== hfp.Topic.JourneyType.journey) {
+    // Treat signoff as deadrun.
+    journeyType = hfp.Topic.JourneyType.deadrun;
+    return {
+      messageId,
+      eventTimestamp,
+      uniqueVehicleId,
+      type: "hfp" as const,
+      journeyType,
+      data: hfpData,
+    };
   }
   const { eventType } = topic;
   if (eventType == null) {
@@ -178,36 +193,51 @@ export const parseHfpPulsarMessage = (
       },
       "The MQTT topic of the HFP message does not contain the event type. Dropping the message.",
     );
-    return result;
+    return undefined;
   }
-  const data = transformHfpToVehicleState(logger, hfpData);
-  if (data == null) {
-    return result;
+  const currentVehicleJourneyState =
+    transformVehicleJourneyHfpToVehicleJourneyState(
+      logger,
+      hfpData,
+      topic,
+      hfpData.payload,
+    );
+  if (currentVehicleJourneyState == null) {
+    logger.warn(
+      { hfpData },
+      "HFP message on a vehicle journey could not be parsed into VehicleJourneyState. Dropping the message.",
+    );
+    return undefined;
   }
-  result = {
-    type: "hfp" as const,
-    data,
-    eventType,
-    hfpData,
+  return {
     messageId,
     eventTimestamp,
     uniqueVehicleId,
+    type: "hfp" as const,
+    journeyType,
+    data: hfpData,
+    currentVehicleJourneyState,
+    eventType,
   };
-  return result;
+};
+
+const replacePartialApcTopic = (topic: string) => {
+  const parts = topic.split("/");
+  parts[5] = "apc";
+  return parts.join("/");
 };
 
 export const parsePartialApcPulsarMessage = (
   logger: pino.Logger,
   message: Pulsar.Message,
-): QueueMessage | undefined => {
-  let result;
+): PartialApcInboxQueueMessage | undefined => {
   const messageData = message.getData();
   const eventTimestamp = message.getEventTimestamp();
   const properties = { ...message.getProperties() };
   const messageId = message.getMessageId();
-  let mqttMessage;
+  let mqttMessage: mqtt.IRawMessage | undefined;
   try {
-    mqttMessage = mqtt.RawMessage.decode(messageData);
+    mqttMessage = decodeWithoutDefaults(mqtt.RawMessage, messageData);
   } catch (err) {
     logger.warn(
       {
@@ -221,9 +251,22 @@ export const parsePartialApcPulsarMessage = (
     );
   }
   if (mqttMessage == null) {
-    return result;
+    return undefined;
+  }
+  if (mqttMessage.topic == null) {
+    logger.warn(
+      {
+        properties,
+        messageId: messageId.toString(),
+        dataString: messageData.toString("utf8"),
+        eventTimestamp,
+      },
+      "The partial APC message does not have an MQTT topic. Dropping the message.",
+    );
+    return undefined;
   }
   const uniqueVehicleId = getUniqueVehicleIdFromMqttTopic(mqttMessage.topic);
+  const mqttTopic = replacePartialApcTopic(mqttMessage.topic);
   if (uniqueVehicleId == null) {
     logger.warn(
       {
@@ -235,7 +278,19 @@ export const parsePartialApcPulsarMessage = (
       },
       "Could not extract unique vehicle ID from MQTT topic",
     );
-    return result;
+    return undefined;
+  }
+  if (mqttMessage.payload == null) {
+    logger.warn(
+      {
+        properties,
+        messageId: messageId.toString(),
+        dataString: messageData.toString("utf8"),
+        eventTimestamp,
+      },
+      "The partial APC message does not have an MQTT payload. Dropping the message.",
+    );
+    return undefined;
   }
   const payloadString = mqttMessage.payload.toString();
   let data;
@@ -254,15 +309,14 @@ export const parsePartialApcPulsarMessage = (
     );
   }
   if (data == null) {
-    return result;
+    return undefined;
   }
-  result = {
-    type: "partialApc" as const,
-    data,
+  return {
     messageId,
-    mqttTopic: mqttMessage.topic,
     eventTimestamp,
     uniqueVehicleId,
+    type: "partialApc" as const,
+    data,
+    mqttTopic,
   };
-  return result;
 };
