@@ -1,0 +1,46 @@
+[
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0018/00678",
+      "payload": {
+        "desi": "65",
+        "dir": "2",
+        "oper": 6,
+        "veh": 678,
+        "tst": 1698640380,
+        "tsi": 1698640380,
+        "lat": 60.171898,
+        "long": 24.943733,
+        "odo": 9082,
+        "oday": "2023-10-30",
+        "jrn": 444,
+        "line": 850,
+        "start": "06:05",
+        "loc": "GPS",
+        "stop": 1020201,
+        "route": "1065",
+        "vehicleCounts": {
+          "countQuality": "regular",
+          "vehicleLoad": 0,
+          "vehicleLoadRatio": 0,
+          "doorCounts": [
+            {
+              "door": "1",
+              "count": [{ "clazz": "adult", "in": 0, "out": 0 }]
+            },
+            {
+              "door": "2",
+              "count": [{ "clazz": "adult", "in": 0, "out": 5 }]
+            },
+            {
+              "door": "3",
+              "count": [{ "clazz": "adult", "in": 0, "out": 0 }]
+            }
+          ]
+        }
+      }
+    },
+    "eventTimestamp": 1698640385143
+  }
+]
