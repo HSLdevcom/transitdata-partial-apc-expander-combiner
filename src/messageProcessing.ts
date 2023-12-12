@@ -1,90 +1,52 @@
-import { setTimeout } from "node:timers/promises";
 import type pino from "pino";
 import type Pulsar from "pulsar-client";
-import type {
-  MessageCollection,
-  ProcessingConfig,
-  QueueMessage,
-} from "./types";
-import { PriorityQueue, createPriorityQueue } from "./priorityQueue";
+import initializeVehicleProsessing from "./vehicleProcessing";
 import {
   parseHfpPulsarMessage,
   parsePartialApcPulsarMessage,
 } from "./messageParsing";
-import { Queue, createQueue } from "./queue";
-import { compareMessages } from "./priorityQueueUtil";
-import initializeStateHandling from "./state";
+import { Queue, createQueue } from "./dataStructures/queue";
+import type {
+  EndCondition,
+  InboxQueueMessage,
+  MessageCollection,
+  ProcessingConfig,
+  RuntimeResources,
+} from "./types";
 
-const keepFeedingHfpMessages = async (
-  logger: pino.Logger,
-  inboxQueue: PriorityQueue<QueueMessage>,
-  hfpConsumer: Pulsar.Consumer,
-): Promise<void> => {
-  // Errors are handled in the calling function.
+const keepFeedingInboxQueueMessages = async (
+  parse: (msg: Pulsar.Message) => InboxQueueMessage | undefined,
+  pushIntoVehicleQueue: (msg: InboxQueueMessage) => void,
+  consumer: Pulsar.Consumer,
+  nMessagesExpected?: number,
+): Promise<number> => {
+  let messageCount = 0;
+  let nQueuePushes = 0;
   /* eslint-disable no-await-in-loop */
-  for (;;) {
-    const hfpPulsarMessage = await hfpConsumer.receive();
-    const hfpMessage = parseHfpPulsarMessage(logger, hfpPulsarMessage);
-    if (hfpMessage != null) {
-      inboxQueue.push(hfpMessage);
+  while (nMessagesExpected === undefined || messageCount < nMessagesExpected) {
+    const pulsarMessage = await consumer.receive();
+    const message = parse(pulsarMessage);
+    if (message != null) {
+      pushIntoVehicleQueue(message);
+      nQueuePushes += 1;
     } else {
       // Acknowledge only unusable messages here.
-      await hfpConsumer.acknowledge(hfpPulsarMessage);
+      await consumer.acknowledge(pulsarMessage);
+    }
+    if (nMessagesExpected !== undefined) {
+      messageCount += 1;
     }
   }
   /* eslint-enable no-await-in-loop */
-};
-
-const keepFeedingPartialApcMessages = async (
-  logger: pino.Logger,
-  inboxQueue: PriorityQueue<QueueMessage>,
-  partialApcConsumer: Pulsar.Consumer,
-): Promise<void> => {
-  // Errors are handled in the calling function.
-  /* eslint-disable no-await-in-loop */
-  for (;;) {
-    const partialApcPulsarMessage = await partialApcConsumer.receive();
-    const partialApcMessage = parsePartialApcPulsarMessage(
-      logger,
-      partialApcPulsarMessage,
-    );
-    if (partialApcMessage != null) {
-      inboxQueue.push(partialApcMessage);
-    } else {
-      // Acknowledge only unusable messages here.
-      await partialApcConsumer.acknowledge(partialApcPulsarMessage);
-    }
-  }
-  /* eslint-enable no-await-in-loop */
-};
-
-const keepAdvancingState = async (
-  { backlogDrainingWaitInSeconds }: ProcessingConfig,
-  inboxQueue: PriorityQueue<QueueMessage>,
-  advanceState: (message: QueueMessage) => void,
-) => {
-  // FIXME: sleep here for n seconds allowing the priority queue to fill up.
-  // Perhaps in n seconds we have reached the end of the topic.
-  // Proper way is to wait for this issue to be solved:
-  // https://github.com/apache/pulsar-client-node/issues/349
-  // A workaround is to use temporary Readers to keep track of backlog.
-  const backlogDrainingWaitInMilliseconds =
-    1_000 * backlogDrainingWaitInSeconds;
-  await setTimeout(backlogDrainingWaitInMilliseconds);
-  /* eslint-disable no-await-in-loop */
-  for (;;) {
-    const message = await inboxQueue.pop();
-    advanceState(message);
-  }
-  /* eslint-enable no-await-in-loop */
+  return nQueuePushes;
 };
 
 const createSendAndAck = (
   producer: Pulsar.Producer,
   hfpConsumer: Pulsar.Consumer,
   partialApcConsumer: Pulsar.Consumer,
-): ((collection: MessageCollection) => Promise<void>) => {
-  const sendAndAck = async (collection: MessageCollection): Promise<void> => {
+): ((collection: MessageCollection) => Promise<number>) => {
+  const sendAndAck = async (collection: MessageCollection): Promise<number> => {
     // FIXME:
     //
     // If some but not all of the sends fail, we end up crashing and resending
@@ -118,50 +80,92 @@ const createSendAndAck = (
       hfpConsumer.acknowledgeId(messageId),
     );
     await Promise.all([...partialApcAckPromises, ...hfpAckPromises]);
+    return collection.toSend.length;
   };
   return sendAndAck;
 };
 
 const keepSendingAndAcking = async (
   outboxQueue: Queue<MessageCollection>,
-  sendAndAck: (collection: MessageCollection) => Promise<void>,
+  sendAndAck: (collection: MessageCollection) => Promise<number>,
+  nMessagesExpected?: number,
 ) => {
+  let nMessagesSent = 0;
+  const increaseCount = (nSent: number): void => {
+    nMessagesSent += nSent;
+  };
   /* eslint-disable no-await-in-loop */
-  for (;;) {
+  while (nMessagesExpected === undefined || nMessagesSent < nMessagesExpected) {
     const collection = await outboxQueue.pop();
     // Promises are resolved in order, so we do not need to await this. Awaiting
     // would decrease throughput.
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    sendAndAck(collection);
+    const promise = sendAndAck(collection);
+    if (nMessagesExpected !== undefined) {
+      // While testing, we must await so the loop does not start again after
+      // last message.
+      await promise.then(increaseCount);
+    }
   }
   /* eslint-enable no-await-in-loop */
 };
 
 const keepProcessingMessages = async (
   logger: pino.Logger,
-  producer: Pulsar.Producer,
-  hfpConsumer: Pulsar.Consumer,
-  partialApcConsumer: Pulsar.Consumer,
+  resources: Required<RuntimeResources>,
   config: ProcessingConfig,
+  endCondition?: EndCondition,
 ): Promise<void> => {
-  const inboxQueue = createPriorityQueue<QueueMessage>({
-    comparable: compareMessages,
-  });
   const outboxQueue = createQueue<MessageCollection>();
-  const { advanceState } = initializeStateHandling(logger, config, outboxQueue);
+  const { pushIntoVehicleQueue, keepCombining } = initializeVehicleProsessing(
+    logger,
+    config,
+    outboxQueue,
+    endCondition?.nApcMessages,
+  );
+  const parsePartialApc = (message: Pulsar.Message) =>
+    parsePartialApcPulsarMessage(logger, message);
+  const partialApcPromise = keepFeedingInboxQueueMessages(
+    parsePartialApc,
+    pushIntoVehicleQueue,
+    resources.partialApcConsumer,
+    endCondition?.nPartialApcMessages,
+  );
+  const parseHfp = (message: Pulsar.Message) =>
+    parseHfpPulsarMessage(logger, message);
+  const hfpPromise = keepFeedingInboxQueueMessages(
+    parseHfp,
+    pushIntoVehicleQueue,
+    resources.hfpConsumer,
+    endCondition?.nHfpMessages,
+  );
   const sendAndAck = createSendAndAck(
-    producer,
-    hfpConsumer,
-    partialApcConsumer,
+    resources.producer,
+    resources.hfpConsumer,
+    resources.partialApcConsumer,
+  );
+  const sendAndAckPromise = keepSendingAndAcking(
+    outboxQueue,
+    sendAndAck,
+    endCondition?.nApcMessages,
   );
   const promises = [
-    keepFeedingHfpMessages(logger, inboxQueue, hfpConsumer),
-    keepFeedingPartialApcMessages(logger, inboxQueue, partialApcConsumer),
-    keepAdvancingState(config, inboxQueue, advanceState),
-    keepSendingAndAcking(outboxQueue, sendAndAck),
+    partialApcPromise,
+    hfpPromise,
+    keepCombining,
+    sendAndAckPromise,
   ];
-  // We expect both of the promises to stay pending.
-  await Promise.any(promises);
+  if (endCondition === undefined) {
+    // Production branch without synchronization
+
+    // We expect the promises to stay pending.
+    await Promise.race(promises);
+    throw new Error("The message processing promises should not get settled");
+  } else {
+    // Testing branch with synchronization
+
+    await Promise.all(promises);
+  }
 };
 
 export default keepProcessingMessages;
