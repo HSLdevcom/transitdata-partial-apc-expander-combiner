@@ -1,11 +1,11 @@
+import createDb from "./db";
 import type {
   DatabaseConfig,
-  UniqueVehicleId,
   EquipmentFromDatabase,
+  UniqueVehicleId,
   VehicleTypeCapacityMap,
   VehicleTypeConfig,
-} from "./types";
-import db from "./db";
+} from "../types";
 
 function getUniqueVehicleId(
   capability: EquipmentFromDatabase,
@@ -19,9 +19,16 @@ function getUniqueVehicleId(
 const getEquipmentFromDatabase = async (
   databaseConfig: DatabaseConfig,
 ): Promise<EquipmentFromDatabase[]> => {
-  return db(databaseConfig.connectionString).many(
+  const db = createDb(databaseConfig.connectionString);
+  const result: EquipmentFromDatabase[] = await db.many(
     "SELECT vehicle_id, operator_id, type FROM equipment",
   );
+  // Close the database connection after use.
+  await db.$pool.end();
+  // This might be unnecessary but close the database connection another way, as
+  // well.
+  db.$config.pgp.end();
+  return result;
 };
 
 const getCapacities = async (
