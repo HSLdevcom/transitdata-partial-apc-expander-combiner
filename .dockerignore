@@ -2,12 +2,13 @@
 **
 
 # Allow these.
+!/.eslintignore
+!/.eslintrc.cjs
+!/.prettierignore
 !/LICENSE
+!/package-lock.json
+!/package.json
 !/protos
 !/src
-!/package.json
-!/package-lock.json
+!/tests
 !/tsconfig.json
-!/.eslintrc.cjs
-!/.eslintignore
-!/.prettierignore
