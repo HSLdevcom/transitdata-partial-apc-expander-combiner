@@ -28,7 +28,7 @@ CMD ["npm", "run", "check-and-build:no-testcontainer-tests"]
 # An alternative to creating this layer is to trust npm prune --production.
 FROM base AS node_modules
 ENV NODE_ENV=production
-RUN npm ci --production
+RUN npm ci --omit=dev
 
 
 
