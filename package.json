@@ -14,7 +14,7 @@
     "build:src": "rm -rf dist && tsc",
     "check-and-build": "npm run build:protobuf && npm run build:quicktype && npm run ts:check && npm run prettier:check && npm run eslint && npm run test && npm run build",
     "check-and-build:no-testcontainer-tests": "npm run build:protobuf && npm run build:quicktype && npm run ts:check && npm run prettier:check && npm run eslint && npm run test:no-testcontainer-tests && npm run build",
-    "eslint": "eslint . --ext .ts --max-warnings=0",
+    "eslint": "eslint . --max-warnings=0",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "start": "node dist/index.js",
@@ -80,7 +80,16 @@
     "preset": "ts-jest/presets/js-with-ts",
     "testEnvironment": "node",
     "testPathIgnorePatterns": [
-      "./dist"
-    ]
+      "/node_modules/",
+      "/dist/"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)$": [
+        "ts-jest",
+        {
+          "tsconfig": "tsconfig.test.json"
+        }
+      ]
+    }
   }
 }
