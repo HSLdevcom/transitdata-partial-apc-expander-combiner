@@ -1,0 +1,38 @@
+[
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0012/01913",
+      "payload": {
+        "desi": "400",
+        "dir": "1",
+        "oper": 12,
+        "veh": 1913,
+        "tst": 1698585896,
+        "tsi": 1698585896,
+        "lat": 60.17172,
+        "long": 24.924236,
+        "odo": 829,
+        "oday": "2023-10-29",
+        "jrn": 663,
+        "line": 1109,
+        "start": "15:21",
+        "loc": "ODO",
+        "stop": 1130110,
+        "route": "4400",
+        "vehicleCounts": {
+          "countQuality": "regular",
+          "vehicleLoad": 12,
+          "vehicleLoadRatio": 0.1538462,
+          "doorCounts": [
+            {
+              "door": "2",
+              "count": [{ "clazz": "adult", "in": 1, "out": 4 }]
+            }
+          ]
+        }
+      }
+    },
+    "eventTimestamp": 1698585901004
+  }
+]

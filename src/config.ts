@@ -1,47 +1,14 @@
 import type pino from "pino";
 import Pulsar from "pulsar-client";
-import { secrets } from "docker-secret";
-import dotenv = require("dotenv");
-import capabilities, {
+import capabilities from "./db/generateVehicleCapabilities";
+import type {
+  Config,
+  DatabaseConfig,
+  ProcessingConfig,
+  PulsarConfig,
   VehicleCapacityMap,
-} from "./generateVehicleCapabilities";
-
-dotenv.config();
-
-export type UniqueVehicleId = string;
-
-export interface ProcessingConfig {
-  apcWaitInSeconds: number;
-  vehicleCapacities: VehicleCapacityMap;
-  defaultVehicleCapacity: number;
-}
-
-export interface PulsarConfig {
-  clientConfig: Pulsar.ClientConfig;
-  producerConfig: Pulsar.ProducerConfig;
-  hfpConsumerConfig: Pulsar.ConsumerConfig;
-  partialApcConsumerConfig: Pulsar.ConsumerConfig;
-}
-
-export interface HealthCheckConfig {
-  port: number;
-}
-
-export interface DatabaseConfig {
-  connectionString: string;
-}
-
-export interface VehicleTypeConfig {
-  vehicleTypes: string;
-}
-
-export interface Config {
-  processing: ProcessingConfig;
-  pulsar: PulsarConfig;
-  healthCheck: HealthCheckConfig;
-  database: DatabaseConfig;
-  vehicleTypes: VehicleTypeConfig;
-}
+} from "./types";
+import { getSecrets } from "./util/dockerSecret";
 
 const getRequired = (envVariable: string) => {
   const variable = process.env[envVariable];
@@ -185,17 +152,10 @@ const getHealthCheckConfig = () => {
 };
 
 const getDatabaseConfig = (): DatabaseConfig => {
-  let connectionString: string | undefined = getOptional(
-    "DATABASE_CONNECTION_URI",
-  );
-
-  if (!connectionString) {
-    connectionString = secrets["DATABASE_CONNECTION_URI"];
-    if (!connectionString) {
-      connectionString = "";
-    }
-  }
-
+  const connectionString =
+    getOptional("DATABASE_CONNECTION_URI") ??
+    getSecrets()["DATABASE_CONNECTION_URI"] ??
+    "";
   return { connectionString };
 };
 
@@ -245,19 +205,34 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
 };
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
-  const apcWaitInSeconds = getOptionalFiniteFloatWithDefault(
-    "APC_WAIT_IN_SECONDS",
-    6,
+  const sendWaitAfterStopChangeInSeconds = getOptionalFiniteFloatWithDefault(
+    "SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS",
+    10,
+  );
+  const sendWaitAfterDeadrunStartInSeconds = getOptionalFiniteFloatWithDefault(
+    "SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS",
+    600,
+  );
+  const keepApcFromDeadrunEndInSeconds = getOptionalFiniteFloatWithDefault(
+    "KEEP_APC_FROM_DEADRUN_END_IN_SECONDS",
+    1200,
+  );
+  const backlogDrainingWaitInSeconds = getOptionalFiniteFloatWithDefault(
+    "BACKLOG_DRAINING_WAIT_IN_SECONDS",
+    60,
   );
   const vehicleCapacities = await getVehicleCapacities();
   return {
-    apcWaitInSeconds,
+    sendWaitAfterStopChangeInSeconds,
+    sendWaitAfterDeadrunStartInSeconds,
+    keepApcFromDeadrunEndInSeconds,
+    backlogDrainingWaitInSeconds,
     vehicleCapacities,
     defaultVehicleCapacity,
   };
 };
 
-export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: getDatabaseConfig(),
   vehicleTypes: getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
@@ -265,22 +240,4 @@ export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   healthCheck: getHealthCheckConfig(),
 });
 
-// To run locally:
-
-// 1. set environment variable DATABASE_CONNECTION_URI
-
-// 2. uncomment the code block below
-/*
-(async () => {
-  const capacities = await getVehicleCapacities();
-  console.log("CAPACITIES SIZE:", capacities.size);
-  console.log("FOR EXAMPLE:");
-  console.log("0022/00979", capacities.get("0022/00979"));
-  console.log("0018/00887", capacities.get("0018/00887"));
-  console.log("0022/00945", capacities.get("0022/00945"));
-})();
-*/
-
-// 3. save this file (be careful not to commit the update of step 2)
-
-// 4. run using this command: npx ts-node src/config.ts
+export default getConfig;

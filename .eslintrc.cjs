@@ -7,8 +7,8 @@ module.exports = {
     "eslint:recommended",
     "airbnb-base",
     "airbnb-typescript/base",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:@typescript-eslint/strict-type-checked",
+    "plugin:@typescript-eslint/stylistic-type-checked",
     "plugin:jest/recommended",
     "plugin:eslint-comments/recommended",
     "plugin:import/recommended",
@@ -26,5 +26,19 @@ module.exports = {
     "import",
     "prettier",
   ],
-  rules: {},
+  root: true,
+  rules: {
+    // turn on errors for missing imports
+    "import/no-unresolved": "error",
+  },
+  settings: {
+    "import/parsers": {
+      "@typescript-eslint/parser": [".ts", ".tsx"],
+    },
+    "import/resolver": {
+      typescript: {
+        alwaysTryTypes: true, // always try to resolve types under `<root>@types` directory even it doesn't contain any source code, like `@types/unist`
+      },
+    },
+  },
 };

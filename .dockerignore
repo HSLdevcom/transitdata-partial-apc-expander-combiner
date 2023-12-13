@@ -2,12 +2,14 @@
 **
 
 # Allow these.
-!/LICENSE
-!/protos
-!/src
-!/package.json
-!/package-lock.json
-!/tsconfig.json
-!/.eslintrc.cjs
 !/.eslintignore
+!/.eslintrc.cjs
 !/.prettierignore
+!/LICENSE
+!/package-lock.json
+!/package.json
+!/protobuf
+!/quicktype
+!/src
+!/tests
+!/tsconfig.json

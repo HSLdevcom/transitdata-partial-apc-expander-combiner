@@ -1,5 +1,5 @@
 import Pulsar from "pulsar-client";
-import type { PulsarConfig } from "./config";
+import type { PulsarConfig } from "./types";
 
 export const createPulsarClient = ({ clientConfig }: PulsarConfig) => {
   const client = new Pulsar.Client({ ...clientConfig });
@@ -11,7 +11,7 @@ export const createPulsarClient = ({ clientConfig }: PulsarConfig) => {
 
 export const createPulsarProducer = async (
   client: Pulsar.Client,
-  { producerConfig }: PulsarConfig,
+  producerConfig: Pulsar.ProducerConfig,
 ) => {
   // There is a try-catch where this function is called.
   // eslint-disable-next-line @typescript-eslint/return-await
