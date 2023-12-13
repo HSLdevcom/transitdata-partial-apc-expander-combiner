@@ -8,15 +8,6 @@ import type {
   RuntimeResources,
 } from "../types";
 
-const isHealthy = (
-  isHealthSetToOk: boolean,
-  resources: Partial<RuntimeResources>,
-) =>
-  isHealthSetToOk &&
-  resources.producer?.isConnected() &&
-  resources.hfpConsumer?.isConnected() &&
-  resources.partialApcConsumer?.isConnected();
-
 const createHealthCheckServer = (
   logger: pino.Logger,
   { port }: HealthCheckConfig,
@@ -25,15 +16,33 @@ const createHealthCheckServer = (
   let isHealthSetToOk = false;
   let server: http.Server | undefined = http.createServer((req, res) => {
     if (req.url === "/healthz") {
-      if (isHealthy(isHealthSetToOk, resources)) {
+      const isProducerConnected = resources.producer?.isConnected() ?? false;
+      const isHfpConsumerConnected =
+        resources.hfpConsumer?.isConnected() ?? false;
+      const isPartialApcConsumerConnected =
+        resources.partialApcConsumer?.isConnected() ?? false;
+      const isHealthy =
+        isHealthSetToOk &&
+        isProducerConnected &&
+        isHfpConsumerConnected &&
+        isPartialApcConsumerConnected;
+      if (isHealthy) {
         logger.debug("Responding to health check: OK");
         res.writeHead(204);
       } else {
-        logger.debug("Responding to health check: not OK");
+        logger.warn(
+          {
+            isHealthSetToOk,
+            isProducerConnected,
+            isHfpConsumerConnected,
+            isPartialApcConsumerConnected,
+          },
+          "Responding to health check: not OK",
+        );
         res.writeHead(500);
       }
     } else {
-      logger.warn("Wrong endpoint requested");
+      logger.warn({ wrongUrl: req.url }, "Wrong health check URL requested");
       res.writeHead(404);
     }
     res.end();
