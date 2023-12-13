@@ -13,11 +13,13 @@
     "build:partial-apc": "mkdir -p ./src/quicktype && rm -f ./src/quicktype/partialApc.ts && quicktype --out ./src/quicktype/partialApc.ts --top-level PartialApc --lang ts --src-lang json --src ./quicktype/partial-apc.json --no-date-times --alphabetize-properties --telemetry disable --converters all-objects && prettier --write ./src/quicktype/partialApc.ts && export TMPFILE=\"$(mktemp)\" && echo '// @ts-nocheck' > \"${TMPFILE}\" && cat ./src/quicktype/partialApc.ts >> \"${TMPFILE}\" && mv \"${TMPFILE}\" ./src/quicktype/partialApc.ts",
     "build:src": "rm -rf dist && tsc",
     "check-and-build": "npm run build:protobuf && npm run build:quicktype && npm run ts:check && npm run prettier:check && npm run eslint && npm run test && npm run build",
+    "check-and-build:no-testcontainer-tests": "npm run build:protobuf && npm run build:quicktype && npm run ts:check && npm run prettier:check && npm run eslint && npm run test:no-testcontainer-tests && npm run build",
     "eslint": "eslint . --ext .ts --max-warnings=0",
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "start": "node dist/index.js",
     "test": "jest",
+    "test:no-testcontainer-tests": "jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\"",
     "ts:check": "tsc --noEmit"
   },
   "repository": {
