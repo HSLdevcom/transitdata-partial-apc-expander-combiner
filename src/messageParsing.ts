@@ -203,10 +203,6 @@ export const parseHfpPulsarMessage = (
       hfpData.payload,
     );
   if (currentVehicleJourneyState == null) {
-    logger.warn(
-      { hfpData },
-      "HFP message on a vehicle journey could not be parsed into VehicleJourneyState. Dropping the message.",
-    );
     return undefined;
   }
   return {
