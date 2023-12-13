@@ -40,6 +40,7 @@ const initializeResources = async (
   );
   logger.info("Create health check server");
   resources.healthCheckServer = createHealthCheckServer(
+    logger,
     config.healthCheck,
     resources,
   );

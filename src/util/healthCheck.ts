@@ -1,5 +1,6 @@
 import http from "node:http";
 import util from "node:util";
+import type pino from "pino";
 import type {
   HealthCheckConfig,
   HealthCheckServer,
@@ -17,6 +18,7 @@ const isHealthy = (
   resources.partialApcConsumer?.isConnected();
 
 const createHealthCheckServer = (
+  logger: pino.Logger,
   { port }: HealthCheckConfig,
   resources: Partial<RuntimeResources>,
 ): HealthCheckServer => {
@@ -24,11 +26,14 @@ const createHealthCheckServer = (
   let server: http.Server | undefined = http.createServer((req, res) => {
     if (req.url === "/healthz") {
       if (isHealthy(isHealthSetToOk, resources)) {
+        logger.debug("Responding to health check: OK");
         res.writeHead(204);
       } else {
+        logger.debug("Responding to health check: not OK");
         res.writeHead(500);
       }
     } else {
+      logger.warn("Wrong endpoint requested");
       res.writeHead(404);
     }
     res.end();
