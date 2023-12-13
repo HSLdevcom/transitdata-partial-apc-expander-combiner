@@ -9,6 +9,7 @@
 !/package-lock.json
 !/package.json
 !/protobuf
+!/quicktype
 !/src
 !/tests
 !/tsconfig.json
