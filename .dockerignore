@@ -8,7 +8,7 @@
 !/LICENSE
 !/package-lock.json
 !/package.json
-!/protos
+!/protobuf
 !/src
 !/tests
 !/tsconfig.json
