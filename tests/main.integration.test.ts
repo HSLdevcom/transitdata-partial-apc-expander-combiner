@@ -222,7 +222,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   const collectResults = async (
     nMessagesExpected: number,
   ): Promise<Pulsar.Message[]> => {
-    const apcPulsarMessages = [];
+    const apcPulsarMessages: Pulsar.Message[] = [];
     while (apcPulsarMessages.length < nMessagesExpected) {
       expect(apcReader.hasNext()).toBeTruthy();
       // eslint-disable-next-line no-await-in-loop
