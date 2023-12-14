@@ -744,6 +744,7 @@ export namespace hfp {
       ODO = 1,
       MAN = 2,
       NA = 3,
+      DR = 4,
     }
 
     /** TlpRequestType enum. */

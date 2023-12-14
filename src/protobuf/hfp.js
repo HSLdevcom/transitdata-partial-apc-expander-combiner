@@ -1069,8 +1069,8 @@ export const hfp = ($root.hfp = (() => {
             options.longs === String
               ? long.toString()
               : options.longs === Number
-              ? long.toNumber()
-              : long;
+                ? long.toNumber()
+                : long;
         } else object.receivedAt = options.longs === String ? "0" : 0;
         object.topicPrefix = "";
         object.topicVersion = "";
@@ -1106,11 +1106,11 @@ export const hfp = ($root.hfp = (() => {
             options.longs === String
               ? $util.Long.prototype.toString.call(message.receivedAt)
               : options.longs === Number
-              ? new $util.LongBits(
-                  message.receivedAt.low >>> 0,
-                  message.receivedAt.high >>> 0,
-                ).toNumber()
-              : message.receivedAt;
+                ? new $util.LongBits(
+                    message.receivedAt.low >>> 0,
+                    message.receivedAt.high >>> 0,
+                  ).toNumber()
+                : message.receivedAt;
       if (message.topicPrefix != null && message.hasOwnProperty("topicPrefix"))
         object.topicPrefix = message.topicPrefix;
       if (
@@ -2164,6 +2164,7 @@ export const hfp = ($root.hfp = (() => {
           case 1:
           case 2:
           case 3:
+          case 4:
             break;
         }
       if (message.stop != null && message.hasOwnProperty("stop"))
@@ -2336,6 +2337,10 @@ export const hfp = ($root.hfp = (() => {
         case 3:
           message.loc = 3;
           break;
+        case "DR":
+        case 4:
+          message.loc = 4;
+          break;
       }
       if (object.stop != null) message.stop = object.stop | 0;
       if (object.route != null) message.route = String(object.route);
@@ -2473,8 +2478,8 @@ export const hfp = ($root.hfp = (() => {
             options.longs === String
               ? long.toString()
               : options.longs === Number
-              ? long.toNumber()
-              : long;
+                ? long.toNumber()
+                : long;
         } else object.tsi = options.longs === String ? "0" : 0;
         object.spd = 0;
         object.hdg = 0;
@@ -2535,11 +2540,11 @@ export const hfp = ($root.hfp = (() => {
             options.longs === String
               ? $util.Long.prototype.toString.call(message.tsi)
               : options.longs === Number
-              ? new $util.LongBits(
-                  message.tsi.low >>> 0,
-                  message.tsi.high >>> 0,
-                ).toNumber()
-              : message.tsi;
+                ? new $util.LongBits(
+                    message.tsi.low >>> 0,
+                    message.tsi.high >>> 0,
+                  ).toNumber()
+                : message.tsi;
       if (message.spd != null && message.hasOwnProperty("spd"))
         object.spd =
           options.json && !isFinite(message.spd)
@@ -2711,6 +2716,7 @@ export const hfp = ($root.hfp = (() => {
      * @property {number} ODO=1 ODO value
      * @property {number} MAN=2 MAN value
      * @property {number} NA=3 NA value
+     * @property {number} DR=4 DR value
      */
     Payload.LocationQualityMethod = (function () {
       const valuesById = {},
@@ -2719,6 +2725,7 @@ export const hfp = ($root.hfp = (() => {
       values[(valuesById[1] = "ODO")] = 1;
       values[(valuesById[2] = "MAN")] = 2;
       values[(valuesById[3] = "NA")] = 3;
+      values[(valuesById[4] = "DR")] = 4;
       return values;
     })();
 
