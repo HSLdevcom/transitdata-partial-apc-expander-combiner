@@ -256,8 +256,8 @@ export const mqtt = ($root.mqtt = (() => {
           options.bytes === String
             ? $util.base64.encode(message.payload, 0, message.payload.length)
             : options.bytes === Array
-            ? Array.prototype.slice.call(message.payload)
-            : message.payload;
+              ? Array.prototype.slice.call(message.payload)
+              : message.payload;
       return object;
     };
 
