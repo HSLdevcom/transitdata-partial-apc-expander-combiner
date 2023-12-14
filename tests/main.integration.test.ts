@@ -50,8 +50,8 @@ const setEnvironmentVariables = ({
     "transitdata_partial_apc_expander_combiner_partial_apc";
   process.env["PULSAR_PRODUCER_TOPIC"] = apcTopic;
   process.env["PULSAR_SERVICE_URL"] = serviceUrl;
-  process.env["SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS"] = "900";
-  process.env["SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS"] = "6";
+  process.env["SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS"] = "600";
+  process.env["SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS"] = "10";
 };
 
 const createVehicleModels = async (
