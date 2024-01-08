@@ -1,12 +1,19 @@
 import pino from "pino";
+import type Pulsar from "pulsar-client";
 import {
   getUniqueVehicleIdFromHfpTopic,
   getUniqueVehicleIdFromMqttTopic,
   parseHfpPulsarMessage,
+  parsePartialApcPulsarMessage,
 } from "../src/messageParsing";
 import { hfp } from "../src/protobuf/hfp";
 import * as partialApc from "../src/quicktype/partialApc";
-import { mockHfpMessage } from "./testUtil/pulsarMocking";
+import { PartialApcInboxQueueMessage } from "../src/types";
+import {
+  mockHfpMessage,
+  mockMessageId,
+  mockPartialApcMessage,
+} from "./testUtil/pulsarMocking";
 
 describe("Get unique vehicle IDs", () => {
   test("Get a unique vehicle ID from a valid MQTT topic", () => {
@@ -50,8 +57,58 @@ describe("Convert anonymized data", () => {
   });
 });
 
+describe("parsePartialApcPulsarMessage", () => {
+  test("Parse partial APC message with latitude 'null'", () => {
+    const logger = pino(
+      {
+        name: "test-logger",
+        timestamp: pino.stdTimeFunctions.isoTime,
+        level: "debug",
+      },
+      pino.destination({ sync: true }),
+    );
+    const mqttTopic = "/hfp/v2/journey/ongoing/apc-partial/bus/0018/01563";
+    const replacedMqttTopic = "/hfp/v2/journey/ongoing/apc/bus/0018/01563";
+    const messageId = 1;
+    const eventTimestamp = new Date("2023-02-12T11:56:13.193852Z").getTime();
+    const partialApcContent: partialApc.Apc = {
+      tst: "2023-02-12T11:56:12Z",
+      lat: null,
+      long: null,
+      vehiclecounts: {
+        vehicleload: 0,
+        doorcounts: [
+          { door: "1", count: [{ class: "adult", in: 2, out: 0 }] },
+          { door: "2", count: [{ class: "adult", in: 0, out: 3 }] },
+          { door: "3", count: [{ class: "adult", in: 0, out: 0 }] },
+        ],
+        countquality: "regular",
+      },
+      schemaVersion: "1-1-0",
+      messageId: "94fdd2b2-b8a7-4abe-b774-7a5db9c311c3",
+    };
+    const input: Pulsar.Message = mockPartialApcMessage({
+      contentJson: JSON.stringify({ APC: partialApcContent }),
+      mqttTopic,
+      eventTimestamp,
+      messageId,
+    });
+    const expectedOutput: PartialApcInboxQueueMessage = {
+      messageId: mockMessageId(messageId),
+      eventTimestamp,
+      uniqueVehicleId: "0018/01563",
+      type: "partialApc",
+      mqttTopic: replacedMqttTopic,
+      data: partialApcContent,
+    };
+    expect(parsePartialApcPulsarMessage(logger, input)).toStrictEqual(
+      expectedOutput,
+    );
+  });
+});
+
 describe("parseHfpPulsarMessage", () => {
-  test("parse HFP message with payload stop 'null'", () => {
+  test("Parse HFP message with payload stop 'null'", () => {
     const logger = pino(
       {
         name: "test-logger",

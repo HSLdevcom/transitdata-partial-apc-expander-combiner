@@ -1,9 +1,9 @@
 import Pulsar from "pulsar-client";
 import { hfp } from "../../src/protobuf/hfp";
 import { mqtt } from "../../src/protobuf/mqtt";
-import type * as partialApc from "../../src/quicktype/partialApc";
+import * as partialApc from "../../src/quicktype/partialApc";
 
-const mockMessageId = (serialMessageId: number): Pulsar.MessageId => {
+export const mockMessageId = (serialMessageId: number): Pulsar.MessageId => {
   return Object.defineProperties(new Pulsar.MessageId(), {
     earliest: {
       value: () => -1,
@@ -64,6 +64,36 @@ const mockPulsarMessage = ({
   return message;
 };
 
+export const mockPartialApcMessage = ({
+  contentJson,
+  mqttTopic,
+  eventTimestamp,
+  properties,
+  messageId,
+}: {
+  contentJson: string;
+  mqttTopic: string;
+  eventTimestamp: number;
+  properties?: Record<string, string>;
+  messageId?: number;
+}): Pulsar.Message => {
+  // Throw if not correct.
+  partialApc.Convert.toPartialApc(contentJson);
+  const mqttMessage = {
+    SchemaVersion: 1,
+    topic: mqttTopic,
+    payload: Buffer.from(contentJson, "utf8"),
+  };
+  const verificationErrorMessage = mqtt.RawMessage.verify(mqttMessage);
+  if (verificationErrorMessage) {
+    throw Error(verificationErrorMessage);
+  }
+  const buffer = Buffer.from(
+    mqtt.RawMessage.encode(mqtt.RawMessage.create(mqttMessage)).finish(),
+  );
+  return mockPulsarMessage({ buffer, eventTimestamp, properties, messageId });
+};
+
 export const mockPartialApcProducerMessage = ({
   content,
   mqttTopic,
@@ -108,6 +138,7 @@ export const mockHfpMessage = ({
   );
   return mockPulsarMessage({ buffer, eventTimestamp, properties, messageId });
 };
+
 export const mockHfpProducerMessage = ({
   hfpData,
   eventTimestamp,
