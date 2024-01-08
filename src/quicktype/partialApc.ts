@@ -13,8 +13,8 @@ export interface PartialApc {
 }
 
 export interface Apc {
-  lat: number;
-  long: number;
+  lat: number | null;
+  long: number | null;
   messageId: string;
   schemaVersion: string;
   tst: string;
@@ -268,8 +268,8 @@ const typeMap: any = {
   PartialApc: o([{ json: "APC", js: "APC", typ: r("Apc") }], false),
   Apc: o(
     [
-      { json: "lat", js: "lat", typ: 3.14 },
-      { json: "long", js: "long", typ: 3.14 },
+      { json: "lat", js: "lat", typ: u(3.14, null) },
+      { json: "long", js: "long", typ: u(3.14, null) },
       { json: "messageId", js: "messageId", typ: "" },
       { json: "schemaVersion", js: "schemaVersion", typ: "" },
       { json: "tst", js: "tst", typ: "" },
