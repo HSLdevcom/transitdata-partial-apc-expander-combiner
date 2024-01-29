@@ -65,7 +65,7 @@
   "dependencies": {
     "@types/pg": "^8.10.9",
     "async-mutex": "^0.4.0",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.4.1",
     "heap-js": "^2.3.0",
     "pg": "^8.11.1",
     "pg-promise": "^11.5.4",
