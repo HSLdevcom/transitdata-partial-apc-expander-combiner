@@ -69,7 +69,7 @@
     "heap-js": "^2.3.0",
     "pg": "^8.11.1",
     "pg-promise": "^11.5.4",
-    "pino": "^8.16.2",
+    "pino": "^8.20.0",
     "protobufjs": "^7.0.0",
     "pulsar-client": "^1.8.2"
   },
