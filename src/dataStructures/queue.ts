@@ -3,6 +3,7 @@ import assert from "node:assert";
 export interface Queue<T> {
   push: (item: T) => void;
   pop: () => Promise<T>;
+  popSync: () => T | undefined;
   size: () => number;
   peek: () => T | undefined;
 }
@@ -50,9 +51,11 @@ export const createQueue = <T>(): Queue<T> => {
     });
   };
 
+  const popSync = (): T | undefined => items.shift();
+
   const size = (): number => items.length;
 
   const peek = (): T | undefined => items[0];
 
-  return { push, pop, size, peek };
+  return { push, pop, popSync, size, peek };
 };

@@ -52,7 +52,7 @@ const createHealthCheckServer = (
     isHealthSetToOk = status === "ok";
   };
   const close = async (): Promise<void> => {
-    if (server && server.listening) {
+    if (server?.listening) {
       await util.promisify(server.close.bind(server))();
       server = undefined;
     }

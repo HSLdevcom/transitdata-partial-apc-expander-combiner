@@ -209,11 +209,11 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
     "SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS",
     10,
   );
-  const sendWaitAfterDeadrunStartInSeconds = getOptionalFiniteFloatWithDefault(
+  const sendWaitAfterDeadRunStartInSeconds = getOptionalFiniteFloatWithDefault(
     "SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS",
     600,
   );
-  const keepApcFromDeadrunEndInSeconds = getOptionalFiniteFloatWithDefault(
+  const keepApcFromDeadRunEndInSeconds = getOptionalFiniteFloatWithDefault(
     "KEEP_APC_FROM_DEADRUN_END_IN_SECONDS",
     1200,
   );
@@ -224,8 +224,8 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   const vehicleCapacities = await getVehicleCapacities();
   return {
     sendWaitAfterStopChangeInSeconds,
-    sendWaitAfterDeadrunStartInSeconds,
-    keepApcFromDeadrunEndInSeconds,
+    sendWaitAfterDeadRunStartInSeconds,
+    keepApcFromDeadRunEndInSeconds,
     backlogDrainingWaitInSeconds,
     vehicleCapacities,
     defaultVehicleCapacity,
