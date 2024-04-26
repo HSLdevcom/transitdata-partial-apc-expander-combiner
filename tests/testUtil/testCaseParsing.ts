@@ -39,7 +39,7 @@ const readApcDataFile = (filePath: string): ApcTestData[] => {
   });
   if (errors.length > 0) {
     throw Error(
-      `For APC file ${filePath} the following data errors were found: ${String(
+      `For APC file ${filePath} the following data errors were found: ${JSON.stringify(
         errors,
       )}.`,
     );

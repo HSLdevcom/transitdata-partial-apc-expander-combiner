@@ -148,7 +148,7 @@ export const mockHfpProducerMessage = ({
 }): Pulsar.ProducerMessage => {
   const verificationErrorMessage = hfp.Data.verify(hfpData);
   if (verificationErrorMessage) {
-    throw Error(verificationErrorMessage);
+    throw Error(`${verificationErrorMessage}: ${JSON.stringify(hfpData)}`);
   }
   const data = Buffer.from(hfp.Data.encode(hfp.Data.create(hfpData)).finish());
   return { data, eventTimestamp };

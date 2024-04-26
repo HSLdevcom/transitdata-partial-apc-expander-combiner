@@ -1,0 +1,1 @@
+When the current stop is missing in all HFP messages sent while approaching a certain stop, use the next stop from the MQTT topic if it differs from the previous stop

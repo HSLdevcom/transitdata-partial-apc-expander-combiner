@@ -109,18 +109,25 @@ const parseHfpTransportMode = (
   }
 };
 
-const parseHfpGeoHash = (parts: string[]) => {
+const parseHfpGeoHash = (
+  parts: string[],
+): { latitude: number | null; longitude: number | null } => {
+  if (parts.every((part) => part === "")) {
+    return { latitude: null, longitude: null };
+  }
   if (!hasLengthAtLeast(parts, 2)) {
     throw new Error(
       `Geohash needs at least two levels. This was given: ${
-        parts.length === 1 ? parts[0] : ""
+        hasLengthAtLeast(parts, 1) ? parts[0] : ""
       }`,
     );
   }
   const latLon = parts[0].split(";");
   if (latLon.length !== 2) {
     throw new Error(
-      "The first level in geohash needs to have two parts separated by ';'",
+      `The first level in geohash needs to have two parts separated by ';'. This was given: ${JSON.stringify(
+        parts,
+      )}`,
     );
   }
   const latArray = [latLon[0]];
@@ -135,10 +142,7 @@ const parseHfpGeoHash = (parts: string[]) => {
   });
   const latitude = parseFloat(latArray.join(""));
   const longitude = parseFloat(lonArray.join(""));
-  return {
-    latitude,
-    longitude,
-  };
+  return { latitude, longitude };
 };
 
 const parseHfpTopic = (timestamp: Date, topic: string): hfp.ITopic => {
@@ -166,27 +170,25 @@ const parseHfpTopic = (timestamp: Date, topic: string): hfp.ITopic => {
       vehicleNumber,
       uniqueVehicleId: `${operatorId.toString()}/${vehicleNumber.toString()}`,
     };
-    if (parts.length === 9) {
+    if (parts.length === 9 || parts.length === 10) {
       return base;
     }
     if (hasLengthAtLeast(parts, 19)) {
-      if (parts.length === 19) {
-        return {
-          ...base,
-          ...{
-            routeId: parts[9],
-            directionId: parseInt(parts[10], 10),
-            headsign: parts[11],
-            startTime: parts[12],
-            nextStop: parts[13],
-            geohashLevel: parseInt(parts[14], 10),
-          },
-          ...parseHfpGeoHash(parts.slice(15)),
-        };
-      }
+      return {
+        ...base,
+        ...{
+          routeId: parts[9],
+          directionId: parseInt(parts[10], 10),
+          headsign: parts[11],
+          startTime: parts[12],
+          nextStop: parts[13],
+          geohashLevel: parseInt(parts[14], 10),
+        },
+        ...parseHfpGeoHash(parts.slice(15, 19)),
+      };
     }
   }
-  throw new Error("TLP messages are not supported");
+  throw new Error(`HFP topic too short or long: ${topic}`);
 };
 
 const parseHfpLoc = (loc: string): hfp.Payload.LocationQualityMethod => {
@@ -210,6 +212,24 @@ const parseHfpLoc = (loc: string): hfp.Payload.LocationQualityMethod => {
   }
 };
 
+const convertToFiniteNumber = (
+  input: string | number | null | undefined,
+): number | null => {
+  let result: number | null = null;
+  if (input != null) {
+    let parsedNumber: number;
+    if (typeof input === "number") {
+      parsedNumber = input;
+    } else {
+      parsedNumber = parseInt(input, 10);
+    }
+    if (Number.isFinite(parsedNumber)) {
+      result = parsedNumber;
+    }
+  }
+  return result;
+};
+
 const parseHfpPayload = (payload: MqttHfpPayload): hfp.IPayload => {
   const keys = Object.keys(payload);
   if (hasLengthAtLeast(keys, 1) && keys.length < 2) {
@@ -217,7 +237,17 @@ const parseHfpPayload = (payload: MqttHfpPayload): hfp.IPayload => {
     const innerPayload = payload[key];
     if (innerPayload != null) {
       const loc = parseHfpLoc(innerPayload.loc);
-      const result = { ...innerPayload, loc, SchemaVersion: 1 };
+      // "line" is sometimes a string or null
+      const line = convertToFiniteNumber(innerPayload.line);
+      // "stop" is sometimes a string or null
+      const stop = convertToFiniteNumber(innerPayload.stop);
+      const result = {
+        ...innerPayload,
+        loc,
+        line,
+        stop,
+        SchemaVersion: 1,
+      };
       return result;
     }
   }

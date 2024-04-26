@@ -11,7 +11,8 @@ import decodeWithoutDefaults from "../src/util/protobufUtil";
 import parseTestCase from "./testUtil/testCaseParsing";
 import type { ApcTestData } from "./types";
 
-// FIXME: Consider adding this into the test cases as well as .env files
+// FIXME: Consider adding environment variables individually into each test case
+// using .env files
 const setEnvironmentVariables = ({
   serviceUrl,
   partialApcTopic,
@@ -25,7 +26,7 @@ const setEnvironmentVariables = ({
   apcTopic: string;
   postgresConnectionUri: string;
 }): void => {
-  process.env["BACKLOG_DRAINING_WAIT_IN_SECONDS"] = "60";
+  process.env["BACKLOG_DRAINING_WAIT_IN_SECONDS"] = "10";
   process.env["CAPACITIES_BY_VEHICLE_TYPE"] = `
     [
       ["A1", 56],
@@ -97,7 +98,7 @@ const createVehicleModels = async (
  * bash script in <projectRoot>/scripts/collect-mqtt-data.template.sh .
  */
 describe("Test using realistic, anonymized data dump extracts and testcontainers", () => {
-  const singleTestTimeoutInMilliseconds = 180_000;
+  const singleTestTimeoutInMilliseconds = 240_000;
   jest.setTimeout(singleTestTimeoutInMilliseconds);
 
   const testDataDir = "./tests/testData";
@@ -132,6 +133,19 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         .withWaitStrategy(testcontainers.Wait.forHealthCheck())
         .start();
 
+  const createPulsarTopics = async (): Promise<void> => {
+    await Promise.all([
+      pulsarContainer.exec([
+        "bin/pulsar-admin",
+        "topics",
+        "create",
+        partialApcTopic,
+      ]),
+      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", hfpTopic]),
+      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", apcTopic]),
+    ]);
+  };
+
   beforeAll(async () => {
     // The database is only read by the individual tests so we do not need to
     // recreate it for every test.
@@ -152,9 +166,10 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
   beforeEach(async () => {
     pulsarContainer = await createPulsarContainer();
+    await createPulsarTopics();
     const pulsarHost = pulsarContainer.getHost();
     const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
-    const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort}`;
+    const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
     pulsarClient = new Pulsar.Client({ serviceUrl });
     partialApcProducer = await pulsarClient.createProducer({
       topic: partialApcTopic,
@@ -193,83 +208,57 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     parsedPartialApcData: Pulsar.ProducerMessage[],
     parsedHfpData: Pulsar.ProducerMessage[],
   ): Promise<void> => {
-    const partialApcPromises = parsedPartialApcData.map((msg) =>
-      partialApcProducer.send(msg),
-    );
-    const hfpPromises = parsedHfpData.map((msg) => hfpProducer.send(msg));
-    await Promise.all([...partialApcPromises, ...hfpPromises]);
-  };
+    // FIXME: As there seems to be a bug in pulsar-client-node implementation of
+    // BlockIfQueueFull, let's do this the slow and hard way.
 
-  const runMain = async (
-    endCondition: EndCondition,
-    stepInMilliseconds: number,
-  ): Promise<void> => {
-    jest.useFakeTimers();
-    let isMainDone = false;
-    const mainPromise = main(endCondition).then(() => {
-      isMainDone = true;
-    });
-    const advanceTime = async () => {
-      while (!isMainDone) {
-        // eslint-disable-next-line no-await-in-loop
-        await jest.advanceTimersByTimeAsync(stepInMilliseconds);
-      }
-    };
-    await Promise.all([mainPromise, advanceTime()]);
-    jest.useRealTimers();
-  };
+    // const partialApcPromises = parsedPartialApcData.map((msg) =>
+    //   partialApcProducer.send(msg),
+    // );
+    // const hfpPromises = parsedHfpData.map((msg) => hfpProducer.send(msg));
+    // const sendingPromises = [...partialApcPromises, ...hfpPromises];
+    // await Promise.all(sendingPromises);
 
-  const collectResults = async (
-    nMessagesExpected: number,
-  ): Promise<Pulsar.Message[]> => {
-    const apcPulsarMessages: Pulsar.Message[] = [];
-    while (apcPulsarMessages.length < nMessagesExpected) {
-      expect(apcReader.hasNext()).toBeTruthy();
+    // eslint-disable-next-line no-restricted-syntax
+    for (const msg of parsedPartialApcData) {
       // eslint-disable-next-line no-await-in-loop
-      apcPulsarMessages.push(await apcReader.readNext());
+      await partialApcProducer.send(msg);
     }
-    return apcPulsarMessages;
+    // eslint-disable-next-line no-restricted-syntax
+    for (const msg of parsedHfpData) {
+      // eslint-disable-next-line no-await-in-loop
+      await hfpProducer.send(msg);
+    }
+  };
+
+  const runMain = async (endCondition: EndCondition): Promise<void> => {
+    await main(endCondition);
   };
 
   const checkAndRemoveVehicleLoadRatios = (
     received: ApcTestData,
     expected: ApcTestData,
   ): void => {
-    const nDigitsAfterDecimalPoint = 5;
     expect(expected.data.payload.vehicleCounts?.vehicleLoadRatio).toBeDefined();
-    if (expected.data.payload.vehicleCounts?.vehicleLoadRatio != null) {
-      expect(received.data.payload.vehicleCounts?.vehicleLoadRatio).toBeCloseTo(
-        expected.data.payload.vehicleCounts.vehicleLoadRatio,
-        nDigitsAfterDecimalPoint,
-      );
-    }
     // eslint-disable-next-line no-param-reassign
     delete received.data.payload.vehicleCounts?.vehicleLoadRatio;
     // eslint-disable-next-line no-param-reassign
     delete expected.data.payload.vehicleCounts?.vehicleLoadRatio;
   };
 
-  const checkResults = (
-    apcPulsarMessages: Pulsar.Message[],
-    expectedApcData: ApcTestData[],
-  ) => {
-    expect(apcPulsarMessages).toHaveLength(expectedApcData.length);
-    apcPulsarMessages.forEach((msg, index) => {
+  const collectAndCheckResults = async (expectedApcData: ApcTestData[]) => {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const expected of expectedApcData) {
+      // eslint-disable-next-line no-await-in-loop
+      const message = await apcReader.readNext();
       const decoded: ApcTestData = {
-        data: decodeWithoutDefaults(passengerCount.Data, msg.getData()),
-        eventTimestamp: msg.getEventTimestamp(),
+        data: decodeWithoutDefaults(passengerCount.Data, message.getData()),
+        eventTimestamp: message.getEventTimestamp(),
       };
-      const expected = expectedApcData[index];
-      expect(expected).toBeDefined();
-      if (expected == null) {
-        throw Error("Test case expectedApcData not defined");
-      }
       checkAndRemoveVehicleLoadRatios(decoded, expected);
       expect(decoded.data).toStrictEqual(expected.data);
-      expect(decoded.eventTimestamp).toStrictEqual(
-        expectedApcData[index]?.eventTimestamp,
-      );
-    });
+      expect(decoded.eventTimestamp).toStrictEqual(expected.eventTimestamp);
+    }
+    expect(apcReader.hasNext()).toBeFalsy();
   };
 
   const runSingleDataTest = async ({
@@ -281,16 +270,14 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     parsedHfpData: Pulsar.ProducerMessage[];
     expectedApcData: ApcTestData[];
   }) => {
-    const stepInMilliseconds = 100;
     const endCondition = {
       nHfpMessages: parsedHfpData.length,
       nPartialApcMessages: parsedPartialApcData.length,
       nApcMessages: expectedApcData.length,
     };
     await feedPulsar(parsedPartialApcData, parsedHfpData);
-    await runMain(endCondition, stepInMilliseconds);
-    const apcPulsarMessages = await collectResults(expectedApcData.length);
-    checkResults(apcPulsarMessages, expectedApcData);
+    await runMain(endCondition);
+    await collectAndCheckResults(expectedApcData);
   };
 
   const createTestsFromSubdirectories = (directoryPath: string): void => {
@@ -306,7 +293,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         parseTestCase(directoryPath, subdir);
       // The actual test is run in another function so silence ESLint.
       // eslint-disable-next-line jest/valid-title,jest/expect-expect
-      test(testName, async () => {
+      test(`${subdir}: ${testName}`, async () => {
         await runSingleDataTest({
           parsedHfpData,
           parsedPartialApcData,

@@ -1,0 +1,72 @@
+[
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0018/01029",
+      "payload": {
+        "desi": "520",
+        "dir": "1",
+        "oper": 6,
+        "veh": 1029,
+        "tst": 1707842100,
+        "tsi": 1707842100,
+        "lat": 60.277096,
+        "long": 24.853893,
+        "odo": 25747,
+        "oday": "2024-02-13",
+        "jrn": 632,
+        "line": 1110,
+        "start": "17:35",
+        "loc": "ODO",
+        "stop": 4170293,
+        "route": "5520",
+        "vehicleCounts": {
+          "countQuality": "regular",
+          "vehicleLoad": -1,
+          "vehicleLoadRatio": -0.01282051282051282,
+          "doorCounts": [
+            { "door": "1", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 8 }] }
+          ]
+        }
+      }
+    },
+    "eventTimestamp": 1707842104056
+  },
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0018/01029",
+      "payload": {
+        "desi": "520",
+        "dir": "2",
+        "oper": 6,
+        "veh": 1029,
+        "tst": 1707842867,
+        "tsi": 1707842867,
+        "lat": 60.277187,
+        "long": 24.85308,
+        "odo": 39,
+        "oday": "2024-02-13",
+        "jrn": 442,
+        "line": 1110,
+        "start": "18:48",
+        "loc": "ODO",
+        "stop": 4170215,
+        "route": "5520",
+        "vehicleCounts": {
+          "countQuality": "regular",
+          "vehicleLoad": 6,
+          "vehicleLoadRatio": 0.07692308,
+          "doorCounts": [
+            { "door": "1", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 7, "out": 0 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] }
+          ]
+        }
+      }
+    },
+    "eventTimestamp": 1707842871937
+  }
+]
