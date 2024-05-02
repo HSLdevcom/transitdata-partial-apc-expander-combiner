@@ -1,3 +1,9 @@
+/**
+ * This module contains the XState actor that models the different states a
+ * vehicle can be in. The actor decides when APC messages are sent and what HFP
+ * message data is used for enhancing the partial APC messages.
+ */
+
 import assert from "node:assert";
 import * as xstate from "xstate";
 import { Queue } from "../dataStructures/queue";
