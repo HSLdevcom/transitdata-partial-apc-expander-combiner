@@ -1,3 +1,10 @@
+/**
+ * This module is called by the XState actor of each vehicle to send APC
+ * messages and to acknowledge the corresponding source data messages. If no
+ * partial APC data is available when sending functions are called, only
+ * acknowledgments will be done.
+ */
+
 import type Pulsar from "pulsar-client";
 import { Queue } from "../dataStructures/queue";
 import * as partialApc from "../quicktype/partialApc";
