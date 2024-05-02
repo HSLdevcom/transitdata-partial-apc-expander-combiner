@@ -1,3 +1,7 @@
+/**
+ * This module deserializes, parses and checks the incoming Pulsar messages.
+ */
+
 import type pino from "pino";
 import type Pulsar from "pulsar-client";
 import { hfp } from "../protobuf/hfp";
