@@ -138,7 +138,7 @@ const createApcHandler = (
     const toBeAggregated: PartialApcInboxQueueMessage[] = [];
     let isBeforeWatermark = true;
     while (isBeforeWatermark) {
-      const peekedPartialApc = partialApcQueue.peek();
+      const peekedPartialApc = partialApcQueue.peekSync();
       if (
         peekedPartialApc != null &&
         peekedPartialApc.eventTimestamp < partialApcWatermark
@@ -198,7 +198,7 @@ const createApcHandler = (
     const toBeAggregated: PartialApcInboxQueueMessage[] = [];
     let isBeforeWatermark = true;
     while (isBeforeWatermark) {
-      const peekedPartialApc = partialApcQueue.peek();
+      const peekedPartialApc = partialApcQueue.peekSync();
       if (
         peekedPartialApc != null &&
         peekedPartialApc.eventTimestamp < partialApcWatermark
@@ -269,7 +269,7 @@ const createApcHandler = (
     const toBeAggregated: PartialApcInboxQueueMessage[] = [];
     let isBeforeWatermark = true;
     while (isBeforeWatermark) {
-      const peekedPartialApc = partialApcQueue.peek();
+      const peekedPartialApc = partialApcQueue.peekSync();
       if (
         peekedPartialApc != null &&
         peekedPartialApc.eventTimestamp < partialApcForwardsWatermark
