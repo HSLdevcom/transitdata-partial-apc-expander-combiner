@@ -1,3 +1,9 @@
+/**
+ * This module reads HFP messages for a particular vehicle, manipulates its
+ * XState actor and handles short dead run timer logic. Each read HFP message
+ * has its MessageId sent onwards for acknowledging.
+ */
+
 import type { Actor, AnyActorLogic } from "xstate";
 import type { Queue } from "../dataStructures/queue";
 import type { HfpInboxQueueMessage, ProcessingConfig } from "../types";
