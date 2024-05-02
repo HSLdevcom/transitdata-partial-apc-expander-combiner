@@ -60,11 +60,14 @@ const createHfpHandler = (
 
     while (isMoreHfpExpected === undefined || isMoreHfpExpected()) {
       if (deadRunTimerMomentInMilliseconds === undefined) {
+        // In this branch we are not on short dead run.
         reportHfpRead?.(1);
         // eslint-disable-next-line no-await-in-loop
         await popAndSend();
-      } else {
-        const peekedMessage = queue.peek();
+      } else if (deadRunTimerTimeout === undefined) {
+        // In this branch we have just arrived to a short dead run and need to
+        // either process the next message, trigger the timer or set the timer.
+        const peekedMessage = queue.peekSync();
         if (peekedMessage === undefined) {
           const nowInMilliseconds = Date.now();
           const diffInMilliseconds =
@@ -85,6 +88,24 @@ const createHfpHandler = (
           await popAndSend();
         } else {
           triggerDeadRunTimer();
+        }
+      } else {
+        // In this branch the timer to leave the short dead run has already been
+        // set above. Here the point is to stop a busy loop and wait for either
+        // the next message or the timer.
+        // eslint-disable-next-line no-await-in-loop
+        const peekedMessage = await queue.peek();
+        // Due to time passing, now either triggerDeadRunTimer() has already
+        // been called by setTimeout or peekedMessage arrived before that.
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (deadRunTimerTimeout != null) {
+          if (peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds) {
+            reportHfpRead?.(1);
+            // eslint-disable-next-line no-await-in-loop
+            await popAndSend();
+          } else {
+            triggerDeadRunTimer();
+          }
         }
       }
     }
