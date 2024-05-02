@@ -1,3 +1,10 @@
+/**
+ * This module collects together closures from different modules for handling a
+ * single vehicle. This module ties the HFP and partial APC message handling and
+ * the XState actor together. This module also handles testing logic to inform
+ * the higher-level loops when all test data has been handled.
+ */
+
 import { Queue, createQueue } from "../dataStructures/queue";
 import type {
   EndCondition,
