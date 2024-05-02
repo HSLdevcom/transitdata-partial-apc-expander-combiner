@@ -44,8 +44,8 @@ const createHfpHandler = (
     backlogDrainingWaitPromise: Promise<void>,
   ): Promise<void> => {
     const triggerDeadRunTimer = () => {
-      vehicleActor.send({ type: "timer" });
       removeDeadRunTimer();
+      vehicleActor.send({ type: "timer" });
     };
 
     const popAndSend = async () => {
