@@ -1,3 +1,11 @@
+/**
+ * This module consumes from and produces to Pulsar. The module is also
+ * responsible for running the deserialization and parsing of messages, for
+ * acknowledging messages with the Pulsar client and for ordering the reading
+ * and writing of messages during testing. This is the highest level business
+ * logic.
+ */
+
 import type pino from "pino";
 import type Pulsar from "pulsar-client";
 import { Queue, createQueue } from "../dataStructures/queue";
