@@ -86,7 +86,7 @@ const initializeVehicleProcessing = (
   ): Promise<void> => {
     const { uniqueVehicleId } = message;
     let vehicleContext = vehicles.get(uniqueVehicleId);
-    if (vehicleContext === undefined) {
+    if (vehicleContext == null) {
       vehicleContext = await initializeVehicleContext(
         config,
         outboxQueue,
