@@ -1,3 +1,7 @@
+/**
+ * This module combines HFP and partial APC data to form a complete APC message.
+ */
+
 import type Pulsar from "pulsar-client";
 import { hfp } from "../protobuf/hfp";
 import { passengerCount } from "../protobuf/passengerCount";
