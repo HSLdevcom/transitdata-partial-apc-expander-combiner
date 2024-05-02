@@ -117,7 +117,7 @@ export const getStops = (
   const { nextStop } = hfpDataTopic;
   const { stop } = hfpDataPayload;
   if (vehicleJourney !== hfp.Topic.JourneyType.deadrun && nextStop == null) {
-    logger.warn(
+    logger.info(
       { hfpData },
       "HFP message topic is missing next stop even when journeyType is journey. Continuing anyway.",
     );
