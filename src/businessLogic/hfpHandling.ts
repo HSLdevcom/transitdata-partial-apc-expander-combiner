@@ -10,7 +10,7 @@ import type { HfpInboxQueueMessage, ProcessingConfig } from "../types";
 
 const createHfpHandler = (
   config: ProcessingConfig,
-  queue: Queue<HfpInboxQueueMessage>,
+  hfpQueue: Queue<HfpInboxQueueMessage>,
   prepareHfpForAcknowledging: (message: HfpInboxQueueMessage) => void,
   hfpEndConditionFuncs?: {
     reportHfpRead: (n: number) => void;
@@ -55,7 +55,7 @@ const createHfpHandler = (
     };
 
     const popAndSend = async () => {
-      const message = await queue.pop();
+      const message = await hfpQueue.pop();
       vehicleActor.send({ type: "message", message });
       prepareHfpForAcknowledging(message);
     };
@@ -73,7 +73,7 @@ const createHfpHandler = (
       } else if (deadRunTimerTimeout === undefined) {
         // In this branch we have just arrived to a short dead run and need to
         // either process the next message, trigger the timer or set the timer.
-        const peekedMessage = queue.peekSync();
+        const peekedMessage = hfpQueue.peekSync();
         if (peekedMessage === undefined) {
           const nowInMilliseconds = Date.now();
           const diffInMilliseconds =
@@ -100,7 +100,7 @@ const createHfpHandler = (
         // set above. Here the point is to stop a busy loop and wait for either
         // the next message or the timer.
         // eslint-disable-next-line no-await-in-loop
-        const peekedMessage = await queue.peek();
+        const peekedMessage = await hfpQueue.peek();
         // Due to time passing, now either triggerDeadRunTimer() has already
         // been called by setTimeout or peekedMessage arrived before that.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
