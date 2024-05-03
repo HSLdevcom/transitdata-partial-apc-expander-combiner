@@ -102,6 +102,7 @@ const createHfpHandler = (
         const peekedMessage = await hfpQueue.peek();
         // Due to time passing, now either triggerDeadRunTimer() has already
         // been called by setTimeout or peekedMessage arrived before that.
+        // ESLint does not recognize time passing.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (deadRunTimerTimeout != null) {
           if (peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds) {
