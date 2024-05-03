@@ -1,0 +1,37 @@
+---
+services:
+  transitdata_partial_apc_expander_combiner:
+    build:
+      context: ..
+      target: production
+    restart: "unless-stopped"
+    depends_on:
+      pulsar:
+        condition: service_healthy
+      vehicle-db:
+        condition: service_healthy
+      transitdata_partial_apc_pbf_json_transformer:
+        condition: service_started
+    environment:
+      - "BACKLOG_DRAINING_WAIT_IN_SECONDS=10"
+      - 'CAPACITIES_BY_VEHICLE_TYPE=[["A1", 56],["A2", 67],["C", 78],["D", 105],["MA", 19],["MB", 19]]'
+      - "DEFAULT_VEHICLE_CAPACITY=78"
+      - "HEALTH_CHECK_PORT=8081"
+      - "KEEP_APC_FROM_DEADRUN_END_IN_SECONDS=1200"
+      - "PINO_LOG_LEVEL=info"
+      - "PULSAR_BLOCK_IF_QUEUE_FULL=true"
+      - "PULSAR_COMPRESSION_TYPE=LZ4"
+      - "PULSAR_HFP_CONSUMER_TOPIC=persistent://public/default/hfp-v2"
+      - "PULSAR_HFP_SUBSCRIPTION=transitdata_partial_apc_expander_combiner_hfp"
+      - "PULSAR_PARTIAL_APC_CONSUMER_TOPIC=persistent://public/default/hfp-mqtt-raw-deduplicated-partial-apc"
+      - "PULSAR_PARTIAL_APC_SUBSCRIPTION=transitdata_partial_apc_expander_combiner_partial_apc"
+      - "PULSAR_PRODUCER_TOPIC=persistent://public/default/hfp-expanded-apc"
+      - "PULSAR_SERVICE_URL=pulsar://pulsar:6650"
+      - "SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS=600"
+      - "SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS=10"
+      - DATABASE_CONNECTION_URI=postgres://postgres:postgres@vehicle-db:5432/postgres
+    healthcheck:
+      test: curl -f http://localhost:8081/healthz || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 2
