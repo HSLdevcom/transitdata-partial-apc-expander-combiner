@@ -18,6 +18,9 @@
     "prettier": "prettier --write .",
     "prettier:check": "prettier --check .",
     "start": "node dist/index.js",
+    "start:with-docker-compose": "node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
+    "start:with-docker-compose-inspect": "node --env-file ./docker-compose/docker-compose-complement.env --inspect dist/index.js",
+    "start:with-docker-compose-flamegraph": "0x -o -- node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
     "test": "jest",
     "test:no-testcontainer-tests": "jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\"",
     "ts:check": "tsc --noEmit"
