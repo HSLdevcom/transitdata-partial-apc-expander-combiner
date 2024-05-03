@@ -55,6 +55,7 @@ const createHfpHandler = (
     };
 
     const popAndSend = async () => {
+      reportHfpRead?.(1);
       const message = await hfpQueue.pop();
       vehicleActor.send({ type: "message", message });
       prepareHfpForAcknowledging(message);
@@ -67,7 +68,6 @@ const createHfpHandler = (
     while (isMoreHfpExpected === undefined || isMoreHfpExpected()) {
       if (deadRunTimerMomentInMilliseconds === undefined) {
         // In this branch we are not on short dead run.
-        reportHfpRead?.(1);
         // eslint-disable-next-line no-await-in-loop
         await popAndSend();
       } else if (deadRunTimerTimeout === undefined) {
@@ -89,7 +89,6 @@ const createHfpHandler = (
         } else if (
           peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds
         ) {
-          reportHfpRead?.(1);
           // eslint-disable-next-line no-await-in-loop
           await popAndSend();
         } else {
@@ -106,7 +105,6 @@ const createHfpHandler = (
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (deadRunTimerTimeout != null) {
           if (peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds) {
-            reportHfpRead?.(1);
             // eslint-disable-next-line no-await-in-loop
             await popAndSend();
           } else {
