@@ -33,12 +33,7 @@ const initializeVehicleContext = async (
   const partialApcQueue = createQueue<PartialApcInboxQueueMessage>();
   const hfpQueue = createQueue<HfpInboxQueueMessage>();
   const apcFuncs = createApcHandler(config, partialApcQueue, outboxQueue);
-  const hfpFuncs = createHfpHandler(
-    config,
-    hfpQueue,
-    apcFuncs.prepareHfpForAcknowledging,
-    hfpEndConditionFuncs,
-  );
+  const hfpFuncs = createHfpHandler(config, hfpQueue, hfpEndConditionFuncs);
   const vehicleActor = createActor(outboxQueue, apcFuncs, hfpFuncs);
   const hfpFeedPromise = hfpFuncs.feedVehicleActor(
     vehicleActor,

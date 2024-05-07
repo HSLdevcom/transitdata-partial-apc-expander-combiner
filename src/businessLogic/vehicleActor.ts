@@ -1,7 +1,8 @@
 /**
  * This module contains the XState actor that models the different states a
  * vehicle can be in. The actor decides when APC messages are sent and what HFP
- * message data is used for enhancing the partial APC messages.
+ * message data is used for enhancing the partial APC messages. The actor also
+ * chooses when HFP messages will be acknowledged.
  */
 
 import assert from "node:assert";
@@ -285,6 +286,7 @@ const isPreviousDefined = ({ context }: VehicleMachineCustomArgs): boolean => {
 export const createActor = (
   outboxQueue: Queue<MessageCollection>,
   apcFuncs: {
+    prepareHfpForAcknowledging: (hfpMessage: HfpInboxQueueMessage) => void;
     sendApcForStop: (
       hfpMessage: HfpInboxQueueMessage,
       serviceJourneyStop: ServiceJourneyStop,
@@ -307,6 +309,7 @@ export const createActor = (
   },
 ): xstate.Actor<xstate.AnyActorLogic> => {
   const {
+    prepareHfpForAcknowledging,
     sendApcForStop,
     sendApcSplitBetweenServiceJourneys,
     sendApcAfterLongDeadRun,
@@ -324,6 +327,11 @@ export const createActor = (
           assert(isVehicleMachineMessageEvent(event));
           assert(isDeadRunInternal(event.message));
           queueSingleHfpForAcking(outboxQueue, event.message);
+        },
+
+        ackLater({ event }) {
+          assert(isVehicleMachineMessageEvent(event));
+          prepareHfpForAcknowledging(event.message);
         },
 
         removeDeadRunTimer() {
@@ -465,7 +473,7 @@ export const createActor = (
       },
     })
     .createMachine({
-      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAOwBmAIz41ANgAsalQCYAnAFY1agBzWANCACeiDVaP4DAgRrM6jVjQI6JmoAviH2qJi4BCQUVLQMLOxcsDz8GiJIIBJSsvJZyggqGm5GOsXqZnoaKipmKvZOCGpmZvhWKiZGKnpBViYDJmER6Nh4RGSUNPRMrJzcvGB8RpnikjJyxAqFVmZu1l0aLWpGrWp6jYh7AvhVnQJm-v5VVsMgkWMxxADKYABOADdsGAAFLkZh-YhgBzzVKLQSrbLrPJbArOHQBdrlPQvLwmAwNRyIEw6HT4DTeF7+apWXZvD7RCa-QHAsEQqEwlJpJYZBQ5Db5UCFDQmHraQz4lq1bpGC5EhDmNzmXTqEwacqPHT00aMkjMoFYUHgyHQ2Hc5aI-ko7bOExWPT4AQqAR256GHo6S4IAJq-D6HRqTwuDoqV7hd468Z6-4Go3s01c+FqS3IzY2hBGQImfBGIw1AYlHStT3ykp1cknWqBgRlWVa8MM8YAITAADNyH8wAAxDB-WDSWhiOh-aQQsBm+HCPmpwVKZy1LRVIy6cxBAS9NRe05uAx6fzOvqGPR6bVRZttjvd3v9wfD0edifpFO5NNo73lbPmep1fStYIlpoDGzfpzlaZ0SU6MMRjPAgW3bTsez7AcwCHEcx0fJYVmnF9Z2FPc2h0F06msc51AAxBCLJARdApVp7RsNQhgbSMvm+NAO2QxI5lkLg-gRbCBVRIVnBaP1AwxR5GLVPQ7S9Cw2l0AxGIeSsRVPT4mXYkcElmZIFn4KcsitV9hIQOjySCHF9GdEUui9AIrDJWUak0I5aT2etoI0vUtM43SML4XkjJnIS5zMsxsyLB5fFzUV3XslwtGqSwqg0Y8cTKdTdR+XydKSAKsOCnDQsKP8-TMaLc1MdRansk4rG0WzTECei6iyqMco4vK5kTfhkwE603zKqKfCquLatLY8GpMGt7RrUicSgiMYM0rqZny3qlj0Z9BPTYaKtG2KasJJpvHMdoXWqMxvA6fwNDCcNiHICA4AURswAGkywoAWhuQZRUzHwcV0eo5SaTRbhUXxaTzGwDD8dqvjiaYuNC4zcMQPQVEdTwa06AwqgDMHEBOG4MX9VUjkWxGmRjVljQ5T6Me9LG3Ecmk13h3QvShtonV8RbrDOE9mJWuDL0Qm8ULvMcmZK5wShuGsHnqSxZWSrd+nwZV8WeWldCMGmfLW1G5b2rQMU8Z1GO8WVlx5jFbjSyxnQsdR-AekIgA */
+      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAOwBmAIz41ANgAsalQCYAnAFY1agBzWANCACeiDVaP4DAgRrM6jVjQI6JmoAviH2qJi4BCQUVLQMLOxcsDz8GiJIIBJSsvJZyggqGm5GOsXqZnoaKipmKvZOCGpmZvhWKiZGKnpBViYDJmER6Nh4RGSUNPRMrJzcvGB8RpnikjJyxAqFVmZaQb1Wu7U6AlZ6jYgWOu49RkaaXXuGwyCRYzHEAMpgAE4AbtgwAApcjMX7EMAOeapRaCVbZdZ5LYFZw6ALtcp6KpWLwmAwNRyIEw6G4abw4-zVI5mV7vaITH4AoGg8GQ6EpNJLDIKHIbfKgQoaEw9bSGfEtWrdIwXIkIcxucy6dQmDTlMxWHR00YMkhMwFYEFgiFQmFc5YIvnI7bOEznfACYoCMoaNSeLqXBDkt34Hx6M7kvSmGVWbVRcZ6v4Go1s02cuFqS1IzY2hBGQImfD3GquFTox6ypqutSZmpqPQ2FSBQNhj74ABCYAAZuRfmAAGIYX6waS0MR0X7ScFgM1w4S85MCpTOWpaKoPII+EwCXpqT1GMxuAwVmoZyt6PS1hmNlttzvd3tgfuD4ej9JJ3Ip1Fe4xqfDFV3CzRnTSFxCHB1-GXFd9E6NQNyPcYT1bDsux7PsByHNs7yWFYJ0fKchQrNpThFCwbD0dQdE9U4bgEXRyVac4bBLSDPi+NBW0vRI5lkLhfnhdD+RRQVnBafAdDddENRLVU9DtT0LDaXQDBLAQLG6YU6MZRjBwSWZkgWfhxyyK0n14hAqPwNV8T9KthQ9OUAk1LNqnUb0aTKZS9VU5iNJQvgeV0yceOnBBxJULMVyAs46jMFdPXJVwBOs6wbCqQTaXCN4dQjb5XPUpIPLQ7yMN8woKxuWp1F6Uxnki6xM36QxwJLQSdFDZL6TShimMyuZ434RMuOtZ8K0CwjjAEYJsXqUxIqqARfUsKLBJlAYVGc9K2pmLLOqWPQH241NWkzHRwvqDURU1CxIpVLMXHTBVvGOsJkuIcgIDgBRmrAHr9L8gBaKbBhFdM-Wueo-2aOc8zdYwK38PMNEPJrUs+OJphY3y9Mw-9As8TxuglBLy09cCpvRfRyhLV1sUakZw3oqMWWNdl3rRr1CLcTVqSCFdauIuU8zaR1fHJ6xWnLZToLPODL2vJC3ty7bn3JdMHX++pLBlao1zlPxMyVfF-A1GxfCW1q1NW1gGfyq59gCR1yNVTcg3Vppod9GHLCrCx1H8O6QiAA */
       context: {
         previousServiceJourneyState: undefined,
         currentServiceJourneyState: undefined,
@@ -490,6 +498,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(setCurrent),
                   {
                     type: "sendApcAfterLongDeadRun",
@@ -502,7 +511,7 @@ export const createActor = (
               },
               {
                 target: "BeforeFirstDeparture",
-                actions: xstate.assign(setCurrent),
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
           },
@@ -515,7 +524,10 @@ export const createActor = (
             message: [
               {
                 target: "OnShortDeadRun",
-                actions: xstate.assign(switchCurrentToPrevious),
+                actions: [
+                  { type: "ackLater" },
+                  xstate.assign(switchCurrentToPrevious),
+                ],
                 guard: {
                   type: "isDeadRun",
                 },
@@ -523,6 +535,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(setCurrent),
                   {
                     type: "sendApcForCurrent",
@@ -536,6 +549,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(setCurrent),
                   {
                     type: "sendApcSplitBetweenServiceJourneys",
@@ -549,7 +563,7 @@ export const createActor = (
               },
               {
                 target: "OnServiceJourney",
-                actions: xstate.assign(setCurrent),
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
           },
@@ -563,6 +577,7 @@ export const createActor = (
             message: [
               {
                 target: "OnLongDeadRun",
+                actions: { type: "ackLater" },
                 guard: {
                   type: "isDeadRun",
                 },
@@ -570,6 +585,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(setCurrent),
                   {
                     type: "sendApcAfterLongDeadRun",
@@ -582,7 +598,7 @@ export const createActor = (
               },
               {
                 target: "BeforeFirstDeparture",
-                actions: xstate.assign(setCurrent),
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
           },
@@ -614,6 +630,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(switchPreviousToCurrent),
                   xstate.assign(setCurrent),
                   {
@@ -628,6 +645,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(switchPreviousToCurrent),
                   xstate.assign(setCurrent),
                 ],
@@ -638,6 +656,7 @@ export const createActor = (
               {
                 target: "OnServiceJourney",
                 actions: [
+                  { type: "ackLater" },
                   xstate.assign(setCurrent),
                   {
                     type: "sendApcSplitBetweenServiceJourneys",
@@ -651,7 +670,7 @@ export const createActor = (
               },
               {
                 target: "OnServiceJourney",
-                actions: xstate.assign(setCurrent),
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
           },

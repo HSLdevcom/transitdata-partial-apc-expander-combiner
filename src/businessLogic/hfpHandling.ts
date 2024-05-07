@@ -1,7 +1,6 @@
 /**
  * This module reads HFP messages for a particular vehicle, manipulates its
- * XState actor and handles short dead run timer logic. Each read HFP message
- * has its MessageId sent onwards for acknowledging.
+ * XState actor and handles short dead run timer logic.
  */
 
 import type { Actor, AnyActorLogic } from "xstate";
@@ -11,7 +10,6 @@ import type { HfpInboxQueueMessage, ProcessingConfig } from "../types";
 const createHfpHandler = (
   config: ProcessingConfig,
   hfpQueue: Queue<HfpInboxQueueMessage>,
-  prepareHfpForAcknowledging: (message: HfpInboxQueueMessage) => void,
   hfpEndConditionFuncs?: {
     reportHfpRead: (n: number) => void;
     isMoreHfpExpected: () => boolean;
@@ -58,7 +56,6 @@ const createHfpHandler = (
       reportHfpRead?.(1);
       const message = await hfpQueue.pop();
       vehicleActor.send({ type: "message", message });
-      prepareHfpForAcknowledging(message);
     };
 
     await backlogDrainingWaitPromise;
