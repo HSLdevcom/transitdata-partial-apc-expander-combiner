@@ -46,8 +46,23 @@ export const getVehicleJourneyId = (
     return hfp.Topic.JourneyType.deadrun;
   }
 
-  const { startTime, routeId, directionId } = hfpDataTopic;
+  const { startTime, routeId, directionId, transportMode } = hfpDataTopic;
   const { oday, start, route, dir } = hfpDataPayload;
+
+  /**
+   * FIXME: Current HFP implementation for metro does not support other than VP
+   * messages. Our current implementation requires PDE or DEP messages to
+   * recognize departures. The concept of departure events in our implementation
+   * would have to change to include robust next stop comparison in
+   * vehicleActor.ts before metro can be supported.
+   */
+  if (transportMode === hfp.Topic.TransportMode.metro) {
+    logger.debug(
+      { hfpData },
+      "HFP message is for metro which does not support PDE or DEP events which our current implementation uses to detect departures. Dropping the message.",
+    );
+    return undefined;
+  }
 
   const currentOperatingDay = oday;
   if (currentOperatingDay == null) {
