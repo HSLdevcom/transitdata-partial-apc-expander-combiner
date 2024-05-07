@@ -10,16 +10,49 @@ import { Queue } from "../dataStructures/queue";
 import * as partialApc from "../quicktype/partialApc";
 import {
   HfpInboxQueueMessage,
+  HfpMessageAndStop,
+  HfpMessageAndStopPair,
   MessageCollection,
+  NonNullableFields,
   PartialApcInboxQueueMessage,
   PartialApcItem,
   ProcessingConfig,
-  ServiceJourneyStop,
   UniqueVehicleId,
 } from "../types";
 import { createSleep } from "../util/sleep";
 import { sumApcValues } from "./partialApcSumming";
 import formProducerMessage from "./producerMessageForming";
+
+const calculateWatermarks = ({
+  eventTimestamp,
+  backwardsWatermarkIntervalInMilliseconds,
+  forwardsWatermarkIntervalInMilliseconds,
+}: {
+  eventTimestamp: number;
+  backwardsWatermarkIntervalInMilliseconds: number | undefined;
+  forwardsWatermarkIntervalInMilliseconds: number;
+}): {
+  backwardsWatermark: number;
+  forwardsWatermark: number;
+} => {
+  const startOfUnixTime = 0;
+  const backwardsWatermark =
+    backwardsWatermarkIntervalInMilliseconds === undefined
+      ? startOfUnixTime
+      : eventTimestamp - backwardsWatermarkIntervalInMilliseconds;
+  const forwardsWatermark =
+    eventTimestamp + forwardsWatermarkIntervalInMilliseconds;
+  return { backwardsWatermark, forwardsWatermark };
+};
+
+const waitIfInFuture = async (forwardsWatermark: number): Promise<void> => {
+  const nowInMilliseconds = Date.now();
+  const waitInMilliseconds = forwardsWatermark - nowInMilliseconds;
+  if (waitInMilliseconds > 0) {
+    const { sleep } = createSleep();
+    await sleep(waitInMilliseconds);
+  }
+};
 
 const aggregatePartialApc = (
   toBeAggregated: PartialApcInboxQueueMessage[],
@@ -116,39 +149,24 @@ const createApcHandler = (
     hfpMessageIdsToAcknowledge.push(hfpMessage.messageId);
   };
 
-  const sendApcForStop = async (
-    hfpMessage: HfpInboxQueueMessage,
-    serviceJourneyStop: ServiceJourneyStop,
-    isFromDeadRunStart: boolean,
-  ): Promise<void> => {
-    const toAckHfp = hfpMessageIdsToAcknowledge;
-    toAckHfp.push(hfpMessage.messageId);
-    hfpMessageIdsToAcknowledge = [];
-
-    const messageCollection: MessageCollection = {
-      toSend: [],
-      toAckPartialApc: [],
-      toAckHfp,
-    };
-
-    const delay = isFromDeadRunStart
-      ? sendWaitAfterDeadRunStartInMilliseconds
-      : sendWaitAfterStopChangeInMilliseconds;
-    const partialApcWatermark = hfpMessage.eventTimestamp + delay;
-    const nowInMilliseconds = Date.now();
-    const diffInMilliseconds = partialApcWatermark - nowInMilliseconds;
-    if (diffInMilliseconds > 0) {
-      const { sleep } = createSleep();
-      await sleep(diffInMilliseconds);
-    }
-
+  const readFromPartialApcQueue = ({
+    backwardsWatermark,
+    forwardsWatermark,
+  }: {
+    backwardsWatermark: number;
+    forwardsWatermark: number;
+  }): {
+    partialApcSummed: PartialApcItem | undefined;
+    toAckPartialApc: Pulsar.MessageId[];
+  } => {
     const toBeAggregated: PartialApcInboxQueueMessage[] = [];
-    let isBeforeWatermark = true;
-    while (isBeforeWatermark) {
+    const toAckPartialApc: Pulsar.MessageId[] = [];
+    let isBeforeForwardsWatermark = true;
+    while (isBeforeForwardsWatermark) {
       const peekedPartialApc = partialApcQueue.peekSync();
       if (
         peekedPartialApc != null &&
-        peekedPartialApc.eventTimestamp < partialApcWatermark
+        peekedPartialApc.eventTimestamp < forwardsWatermark
       ) {
         // As the peeked value is defined, the popped value cannot be undefined.
         //
@@ -157,162 +175,154 @@ const createApcHandler = (
         // interleaved queue consumption.
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const partialApcMessage = partialApcQueue.popSync()!;
-        toBeAggregated.push(partialApcMessage);
-        messageCollection.toAckPartialApc.push(partialApcMessage.messageId);
+        if (partialApcMessage.eventTimestamp >= backwardsWatermark) {
+          toBeAggregated.push(partialApcMessage);
+        }
+        toAckPartialApc.push(partialApcMessage.messageId);
       } else {
-        isBeforeWatermark = false;
+        isBeforeForwardsWatermark = false;
       }
     }
     const partialApcSummed = aggregatePartialApc(toBeAggregated);
+    return { partialApcSummed, toAckPartialApc };
+  };
+
+  const formWhatToSend = ({
+    partialApcSummed,
+    previous,
+    current,
+  }: {
+    partialApcSummed: PartialApcItem | undefined;
+    previous: HfpMessageAndStop | undefined;
+    current: HfpMessageAndStop;
+  }): Pulsar.ProducerMessage[] => {
+    const toSend: Pulsar.ProducerMessage[] = [];
     if (partialApcSummed != null) {
-      const vehicleCapacity = getVehicleCapacity(hfpMessage.uniqueVehicleId);
-      const pulsarProducerMessage = formProducerMessage(
-        vehicleCapacity,
-        hfpMessage.data,
-        partialApcSummed,
-        serviceJourneyStop,
+      const vehicleCapacity = getVehicleCapacity(
+        current.hfpMessage.uniqueVehicleId,
       );
-      messageCollection.toSend.push(pulsarProducerMessage);
+      const shouldSplit = previous != null;
+      if (shouldSplit) {
+        const { alighting, boarding } =
+          splitAlightingFromBoarding(partialApcSummed);
+        const alightingMessage = formProducerMessage(
+          vehicleCapacity,
+          previous.hfpMessage.data,
+          alighting,
+          previous.serviceJourneyStop,
+        );
+        const boardingMessage = formProducerMessage(
+          vehicleCapacity,
+          current.hfpMessage.data,
+          boarding,
+          current.serviceJourneyStop,
+        );
+        toSend.push(alightingMessage);
+        toSend.push(boardingMessage);
+      } else {
+        const pulsarProducerMessage = formProducerMessage(
+          vehicleCapacity,
+          current.hfpMessage.data,
+          partialApcSummed,
+          current.serviceJourneyStop,
+        );
+        toSend.push(pulsarProducerMessage);
+      }
     }
+    return toSend;
+  };
+
+  const sendApc = async ({
+    backwardsWatermarkIntervalInMilliseconds,
+    forwardsWatermarkIntervalInMilliseconds,
+    hfpMessagesAndStops,
+  }: {
+    backwardsWatermarkIntervalInMilliseconds: number | undefined;
+    forwardsWatermarkIntervalInMilliseconds: number;
+    hfpMessagesAndStops: HfpMessageAndStopPair;
+  }): Promise<void> => {
+    // Decide HFP MessageIds to ack before any awaits to avoid race conditions.
+    const toAckHfp = hfpMessageIdsToAcknowledge;
+    hfpMessageIdsToAcknowledge = [];
+
+    const { previous, current } = hfpMessagesAndStops;
+    const { backwardsWatermark, forwardsWatermark } = calculateWatermarks({
+      eventTimestamp: current.hfpMessage.eventTimestamp,
+      backwardsWatermarkIntervalInMilliseconds,
+      forwardsWatermarkIntervalInMilliseconds,
+    });
+    await waitIfInFuture(forwardsWatermark);
+    const { partialApcSummed, toAckPartialApc } = readFromPartialApcQueue({
+      backwardsWatermark,
+      forwardsWatermark,
+    });
+    const toSend = formWhatToSend({ partialApcSummed, previous, current });
+    const messageCollection: MessageCollection = {
+      toSend,
+      toAckPartialApc,
+      toAckHfp,
+    };
     outboxQueue.push(messageCollection);
+  };
+
+  const sendApcMidServiceJourney = async (
+    hfpMessageAndStop: HfpMessageAndStop,
+  ): Promise<void> => {
+    await sendApc({
+      backwardsWatermarkIntervalInMilliseconds: undefined,
+      forwardsWatermarkIntervalInMilliseconds:
+        sendWaitAfterStopChangeInMilliseconds,
+      hfpMessagesAndStops: {
+        previous: undefined,
+        current: hfpMessageAndStop,
+      },
+    });
+  };
+
+  const sendApcFromBeginningOfLongDeadRun = async (
+    hfpMessageAndStop: HfpMessageAndStop,
+  ): Promise<void> => {
+    await sendApc({
+      backwardsWatermarkIntervalInMilliseconds: undefined,
+      forwardsWatermarkIntervalInMilliseconds:
+        sendWaitAfterDeadRunStartInMilliseconds,
+      hfpMessagesAndStops: {
+        previous: undefined,
+        current: hfpMessageAndStop,
+      },
+    });
   };
 
   const sendApcSplitBetweenServiceJourneys = async (
-    previousHfpMessage: HfpInboxQueueMessage,
-    currentHfpMessage: HfpInboxQueueMessage,
-    previousStop: ServiceJourneyStop,
-    currentStop: ServiceJourneyStop,
+    hfpMessagesAndStops: NonNullableFields<HfpMessageAndStopPair>,
   ): Promise<void> => {
-    const toAckHfp = hfpMessageIdsToAcknowledge;
-    toAckHfp.push(currentHfpMessage.messageId);
-    hfpMessageIdsToAcknowledge = [];
-
-    const messageCollection: MessageCollection = {
-      toSend: [],
-      toAckPartialApc: [],
-      toAckHfp,
-    };
-
-    const partialApcWatermark =
-      currentHfpMessage.eventTimestamp + sendWaitAfterStopChangeInMilliseconds;
-    const nowInMilliseconds = Date.now();
-    const diffInMilliseconds = partialApcWatermark - nowInMilliseconds;
-    if (diffInMilliseconds > 0) {
-      const { sleep } = createSleep();
-      await sleep(diffInMilliseconds);
-    }
-
-    const toBeAggregated: PartialApcInboxQueueMessage[] = [];
-    let isBeforeWatermark = true;
-    while (isBeforeWatermark) {
-      const peekedPartialApc = partialApcQueue.peekSync();
-      if (
-        peekedPartialApc != null &&
-        peekedPartialApc.eventTimestamp < partialApcWatermark
-      ) {
-        // As the peeked value is defined, the popped value cannot be undefined.
-        //
-        // Use popSync instead of pop to collect all suitable partial APC
-        // messages at once. The idea is to avoid race conditions and
-        // interleaved queue consumption.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const partialApcMessage = partialApcQueue.popSync()!;
-        toBeAggregated.push(partialApcMessage);
-        messageCollection.toAckPartialApc.push(partialApcMessage.messageId);
-      } else {
-        isBeforeWatermark = false;
-      }
-    }
-    const partialApcSummed = aggregatePartialApc(toBeAggregated);
-    if (partialApcSummed != null) {
-      const vehicleCapacity = getVehicleCapacity(
-        currentHfpMessage.uniqueVehicleId,
-      );
-      const { alighting, boarding } =
-        splitAlightingFromBoarding(partialApcSummed);
-      const alightingMessage = formProducerMessage(
-        vehicleCapacity,
-        previousHfpMessage.data,
-        alighting,
-        previousStop,
-      );
-      const boardingMessage = formProducerMessage(
-        vehicleCapacity,
-        currentHfpMessage.data,
-        boarding,
-        currentStop,
-      );
-      messageCollection.toSend.push(alightingMessage);
-      messageCollection.toSend.push(boardingMessage);
-    }
-    outboxQueue.push(messageCollection);
+    await sendApc({
+      backwardsWatermarkIntervalInMilliseconds: undefined,
+      forwardsWatermarkIntervalInMilliseconds:
+        sendWaitAfterStopChangeInMilliseconds,
+      hfpMessagesAndStops,
+    });
   };
 
   const sendApcAfterLongDeadRun = async (
-    hfpMessage: HfpInboxQueueMessage,
-    serviceJourneyStop: ServiceJourneyStop,
+    hfpMessageAndStop: HfpMessageAndStop,
   ): Promise<void> => {
-    const toAckHfp = hfpMessageIdsToAcknowledge;
-    toAckHfp.push(hfpMessage.messageId);
-    hfpMessageIdsToAcknowledge = [];
-
-    const messageCollection: MessageCollection = {
-      toSend: [],
-      toAckPartialApc: [],
-      toAckHfp,
-    };
-
-    const partialApcBackwardsWatermark =
-      hfpMessage.eventTimestamp - keepApcFromDeadRunEndInMilliseconds;
-    const partialApcForwardsWatermark =
-      hfpMessage.eventTimestamp + sendWaitAfterStopChangeInMilliseconds;
-    const nowInMilliseconds = Date.now();
-    const diffInMilliseconds = partialApcForwardsWatermark - nowInMilliseconds;
-    if (diffInMilliseconds > 0) {
-      const { sleep } = createSleep();
-      await sleep(diffInMilliseconds);
-    }
-
-    const toBeAggregated: PartialApcInboxQueueMessage[] = [];
-    let isBeforeWatermark = true;
-    while (isBeforeWatermark) {
-      const peekedPartialApc = partialApcQueue.peekSync();
-      if (
-        peekedPartialApc != null &&
-        peekedPartialApc.eventTimestamp < partialApcForwardsWatermark
-      ) {
-        // As the peeked value is defined, the popped value cannot be undefined.
-        //
-        // Use popSync instead of pop to collect all suitable partial APC
-        // messages at once. The idea is to avoid race conditions and
-        // interleaved queue consumption.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        const partialApcMessage = partialApcQueue.popSync()!;
-        if (partialApcMessage.eventTimestamp >= partialApcBackwardsWatermark) {
-          toBeAggregated.push(partialApcMessage);
-        }
-        messageCollection.toAckPartialApc.push(partialApcMessage.messageId);
-      } else {
-        isBeforeWatermark = false;
-      }
-    }
-    const partialApcSummed = aggregatePartialApc(toBeAggregated);
-    if (partialApcSummed != null) {
-      const vehicleCapacity = getVehicleCapacity(hfpMessage.uniqueVehicleId);
-      const pulsarProducerMessage = formProducerMessage(
-        vehicleCapacity,
-        hfpMessage.data,
-        partialApcSummed,
-        serviceJourneyStop,
-      );
-      messageCollection.toSend.push(pulsarProducerMessage);
-    }
-    outboxQueue.push(messageCollection);
+    await sendApc({
+      backwardsWatermarkIntervalInMilliseconds:
+        keepApcFromDeadRunEndInMilliseconds,
+      forwardsWatermarkIntervalInMilliseconds:
+        sendWaitAfterStopChangeInMilliseconds,
+      hfpMessagesAndStops: {
+        previous: undefined,
+        current: hfpMessageAndStop,
+      },
+    });
   };
 
   return {
     prepareHfpForAcknowledging,
-    sendApcForStop,
+    sendApcMidServiceJourney,
+    sendApcFromBeginningOfLongDeadRun,
     sendApcSplitBetweenServiceJourneys,
     sendApcAfterLongDeadRun,
   };

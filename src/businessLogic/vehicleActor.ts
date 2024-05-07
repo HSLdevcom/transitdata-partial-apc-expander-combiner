@@ -12,7 +12,10 @@ import { hfp } from "../protobuf/hfp";
 import {
   HfpDeadRunInboxQueueMessage,
   HfpInboxQueueMessage,
+  HfpMessageAndStop,
+  HfpMessageAndStopPair,
   MessageCollection,
+  NonNullableFields,
   ServiceJourneyState,
   ServiceJourneyStop,
   StopId,
@@ -287,20 +290,17 @@ export const createActor = (
   outboxQueue: Queue<MessageCollection>,
   apcFuncs: {
     prepareHfpForAcknowledging: (hfpMessage: HfpInboxQueueMessage) => void;
-    sendApcForStop: (
-      hfpMessage: HfpInboxQueueMessage,
-      serviceJourneyStop: ServiceJourneyStop,
-      isFromDeadRunStart: boolean,
+    sendApcMidServiceJourney: (
+      hfpMessageAndStop: HfpMessageAndStop,
+    ) => Promise<void>;
+    sendApcFromBeginningOfLongDeadRun: (
+      hfpMessageAndStop: HfpMessageAndStop,
     ) => Promise<void>;
     sendApcSplitBetweenServiceJourneys: (
-      previousHfpMessage: HfpInboxQueueMessage,
-      currentHfpMessage: HfpInboxQueueMessage,
-      previousStop: ServiceJourneyStop,
-      currentStop: ServiceJourneyStop,
+      hfpMessagesAndStops: NonNullableFields<HfpMessageAndStopPair>,
     ) => Promise<void>;
     sendApcAfterLongDeadRun: (
-      hfpMessage: HfpInboxQueueMessage,
-      serviceJourneyStop: ServiceJourneyStop,
+      hfpMessageAndStop: HfpMessageAndStop,
     ) => Promise<void>;
   },
   hfpFuncs: {
@@ -310,7 +310,8 @@ export const createActor = (
 ): xstate.Actor<xstate.AnyActorLogic> => {
   const {
     prepareHfpForAcknowledging,
-    sendApcForStop,
+    sendApcMidServiceJourney,
+    sendApcFromBeginningOfLongDeadRun,
     sendApcSplitBetweenServiceJourneys,
     sendApcAfterLongDeadRun,
   } = apcFuncs;
@@ -347,7 +348,10 @@ export const createActor = (
             context.currentServiceJourneyState,
           );
           if (serviceJourneyStop != null) {
-            await sendApcAfterLongDeadRun(event.message, serviceJourneyStop);
+            await sendApcAfterLongDeadRun({
+              hfpMessage: event.message,
+              serviceJourneyStop,
+            });
           }
         },
 
@@ -360,7 +364,10 @@ export const createActor = (
             context.currentServiceJourneyState,
           );
           if (serviceJourneyStop != null) {
-            await sendApcForStop(event.message, serviceJourneyStop, false);
+            await sendApcMidServiceJourney({
+              hfpMessage: event.message,
+              serviceJourneyStop,
+            });
           }
         },
 
@@ -377,11 +384,10 @@ export const createActor = (
           ) {
             // We do not need to advanceCurrentStop as the next action will be
             // removePrevious.
-            await sendApcForStop(
-              context.previousServiceJourneyState.latestHfp,
+            await sendApcFromBeginningOfLongDeadRun({
+              hfpMessage: context.previousServiceJourneyState.latestHfp,
               serviceJourneyStop,
-              true,
-            );
+            });
           }
         },
 
@@ -401,12 +407,16 @@ export const createActor = (
             previousServiceJourneyStop != null &&
             currentServiceJourneyStop != null
           ) {
-            await sendApcSplitBetweenServiceJourneys(
-              context.previousServiceJourneyState.latestHfp,
-              event.message,
-              previousServiceJourneyStop,
-              currentServiceJourneyStop,
-            );
+            await sendApcSplitBetweenServiceJourneys({
+              previous: {
+                hfpMessage: context.previousServiceJourneyState.latestHfp,
+                serviceJourneyStop: previousServiceJourneyStop,
+              },
+              current: {
+                hfpMessage: event.message,
+                serviceJourneyStop: currentServiceJourneyStop,
+              },
+            });
           }
         },
 

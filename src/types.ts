@@ -148,6 +148,16 @@ export type InboxQueueMessage =
   | PartialApcInboxQueueMessage
   | HfpInboxQueueMessage;
 
+export interface HfpMessageAndStop {
+  hfpMessage: HfpInboxQueueMessage;
+  serviceJourneyStop: ServiceJourneyStop;
+}
+
+export interface HfpMessageAndStopPair {
+  previous: HfpMessageAndStop | undefined;
+  current: HfpMessageAndStop;
+}
+
 export interface VehicleContext {
   partialApcQueue: Queue<PartialApcInboxQueueMessage>;
   hfpQueue: Queue<HfpInboxQueueMessage>;
