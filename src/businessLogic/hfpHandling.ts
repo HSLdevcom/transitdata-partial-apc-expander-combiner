@@ -105,6 +105,8 @@ const createHfpHandler = (
         // ESLint does not recognize time passing.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (deadRunTimerTimeout != null) {
+          // In this branch triggerDeadRunTimer() has not been called yet so it
+          // makes sense to compare the timestamps.
           if (peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds) {
             // eslint-disable-next-line no-await-in-loop
             await popAndSend();
