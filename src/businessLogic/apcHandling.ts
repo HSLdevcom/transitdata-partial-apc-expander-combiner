@@ -37,10 +37,9 @@ const calculateWatermarks = ({
   backwardsWatermark: number;
   forwardsWatermark: number;
 } => {
-  const startOfUnixTime = 0;
   const backwardsWatermark =
     backwardsWatermarkIntervalInMilliseconds === undefined
-      ? startOfUnixTime
+      ? -Infinity
       : eventTimestamp - backwardsWatermarkIntervalInMilliseconds;
   const forwardsWatermark =
     eventTimestamp + forwardsWatermarkIntervalInMilliseconds;
