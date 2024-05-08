@@ -24,6 +24,7 @@ services:
       - "127.0.0.1:9527:9527"
     environment:
       - "SPRING_CONFIGURATION_FILE=/pulsar-manager/pulsar-manager/application.properties"
+      - "PULSAR_PEEK_MESSAGE=true"
 
   set-pulsar-manager-user:
     image: "apachepulsar/pulsar-manager:latest"
