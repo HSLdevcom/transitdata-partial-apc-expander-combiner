@@ -4,32 +4,29 @@ import capabilities from "./db/generateVehicleCapabilities";
 import type {
   Config,
   DatabaseConfig,
+  HealthCheckConfig,
   ProcessingConfig,
   PulsarConfig,
   VehicleCapacityMap,
+  VehicleTypeConfig,
 } from "./types";
 import { getSecrets } from "./util/dockerSecret";
 
-const getRequired = (envVariable: string) => {
+const getRequired = (envVariable: string): string => {
   const variable = process.env[envVariable];
-  if (variable) {
+  if (variable != null) {
     return variable;
   }
   throw new Error(`${envVariable} must be defined`);
 };
 
-const getOptional = (envVariable: string) => {
-  const variable = process.env[envVariable];
-  if (variable) {
-    return variable;
-  }
-  return undefined;
-};
+const getOptional = (envVariable: string): string | undefined =>
+  process.env[envVariable];
 
 const getOptionalBooleanWithDefault = (
   envVariable: string,
   defaultValue: boolean,
-) => {
+): boolean => {
   let result = defaultValue;
   const str = getOptional(envVariable);
   if (str !== undefined) {
@@ -44,7 +41,7 @@ const getOptionalBooleanWithDefault = (
 const getOptionalFiniteFloatWithDefault = (
   envVariable: string,
   defaultValue: number,
-) => {
+): number => {
   let result = defaultValue;
   const str = getOptional(envVariable);
   if (str !== undefined) {
@@ -52,6 +49,17 @@ const getOptionalFiniteFloatWithDefault = (
     if (!Number.isFinite(result)) {
       throw new Error(`${envVariable} must be a finite float`);
     }
+  }
+  return result;
+};
+
+const getOptionalFiniteNonNegativeFloatWithDefault = (
+  envVariable: string,
+  defaultValue: number,
+): number => {
+  const result = getOptionalFiniteFloatWithDefault(envVariable, defaultValue);
+  if (result < 0) {
+    throw new Error(`${envVariable} must be a non-negative, finite float`);
   }
   return result;
 };
@@ -146,7 +154,7 @@ const getPulsarConfig = (logger: pino.Logger): PulsarConfig => {
   };
 };
 
-const getHealthCheckConfig = () => {
+const getHealthCheckConfig = (): HealthCheckConfig => {
   const port = parseInt(getOptional("HEALTH_CHECK_PORT") ?? "8080", 10);
   return { port };
 };
@@ -159,12 +167,12 @@ const getDatabaseConfig = (): DatabaseConfig => {
   return { connectionString };
 };
 
-const getVehicleTypeConfig = () => {
+const getVehicleTypeConfig = (): VehicleTypeConfig => {
   const vehicleTypes = getRequired("CAPACITIES_BY_VEHICLE_TYPE");
   return { vehicleTypes };
 };
 
-const defaultVehicleCapacity = getOptionalFiniteFloatWithDefault(
+const defaultVehicleCapacity = getOptionalFiniteNonNegativeFloatWithDefault(
   "DEFAULT_VEHICLE_CAPACITY",
   78,
 );
@@ -205,22 +213,26 @@ const getVehicleCapacities = async (): Promise<VehicleCapacityMap> => {
 };
 
 const getProcessingConfig = async (): Promise<ProcessingConfig> => {
-  const sendWaitAfterStopChangeInSeconds = getOptionalFiniteFloatWithDefault(
-    "SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS",
-    10,
-  );
-  const sendWaitAfterDeadRunStartInSeconds = getOptionalFiniteFloatWithDefault(
-    "SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS",
-    600,
-  );
-  const keepApcFromDeadRunEndInSeconds = getOptionalFiniteFloatWithDefault(
-    "KEEP_APC_FROM_DEADRUN_END_IN_SECONDS",
-    1200,
-  );
-  const backlogDrainingWaitInSeconds = getOptionalFiniteFloatWithDefault(
-    "BACKLOG_DRAINING_WAIT_IN_SECONDS",
-    60,
-  );
+  const sendWaitAfterStopChangeInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS",
+      10,
+    );
+  const sendWaitAfterDeadRunStartInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS",
+      600,
+    );
+  const keepApcFromDeadRunEndInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "KEEP_APC_FROM_DEADRUN_END_IN_SECONDS",
+      1200,
+    );
+  const backlogDrainingWaitInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "BACKLOG_DRAINING_WAIT_IN_SECONDS",
+      60,
+    );
   const vehicleCapacities = await getVehicleCapacities();
   return {
     sendWaitAfterStopChangeInSeconds,
