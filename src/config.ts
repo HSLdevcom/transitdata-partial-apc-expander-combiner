@@ -233,12 +233,39 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
       "BACKLOG_DRAINING_WAIT_IN_SECONDS",
       60,
     );
+  const forcedAckIntervalInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "FORCED_ACK_INTERVAL_IN_SECONDS",
+      7200,
+    );
+  const forcedAckCheckIntervalInSeconds =
+    getOptionalFiniteNonNegativeFloatWithDefault(
+      "FORCED_ACK_CHECK_INTERVAL_IN_SECONDS",
+      1800,
+    );
+  if (forcedAckIntervalInSeconds <= sendWaitAfterStopChangeInSeconds) {
+    throw new Error(
+      `FORCED_ACK_INTERVAL_IN_SECONDS must be larger than SEND_WAIT_AFTER_STOP_CHANGE_IN_SECONDS`,
+    );
+  }
+  if (forcedAckIntervalInSeconds <= sendWaitAfterDeadRunStartInSeconds) {
+    throw new Error(
+      `FORCED_ACK_INTERVAL_IN_SECONDS must be larger than SEND_WAIT_AFTER_DEADRUN_START_IN_SECONDS`,
+    );
+  }
+  if (forcedAckIntervalInSeconds <= keepApcFromDeadRunEndInSeconds) {
+    throw new Error(
+      `FORCED_ACK_INTERVAL_IN_SECONDS must be larger than KEEP_APC_FROM_DEADRUN_END_IN_SECONDS`,
+    );
+  }
   const vehicleCapacities = await getVehicleCapacities();
   return {
     sendWaitAfterStopChangeInSeconds,
     sendWaitAfterDeadRunStartInSeconds,
     keepApcFromDeadRunEndInSeconds,
     backlogDrainingWaitInSeconds,
+    forcedAckIntervalInSeconds,
+    forcedAckCheckIntervalInSeconds,
     vehicleCapacities,
     defaultVehicleCapacity,
   };

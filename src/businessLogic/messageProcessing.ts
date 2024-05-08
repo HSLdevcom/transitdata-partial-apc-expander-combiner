@@ -131,7 +131,7 @@ const keepProcessingMessages = async (
 ): Promise<void> => {
   const outboxQueue = createQueue<MessageCollection>();
   const { pushIntoVehicleQueue, waitForHfpFeeding } =
-    initializeVehicleProsessing(config, outboxQueue, endCondition);
+    initializeVehicleProsessing(logger, config, outboxQueue, endCondition);
   const parsePartialApc = (message: Pulsar.Message) =>
     parsePartialApcPulsarMessage(logger, message);
   const partialApcPromise = keepFeedingInboxQueueMessages(

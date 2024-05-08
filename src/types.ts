@@ -22,6 +22,8 @@ export interface ProcessingConfig {
   sendWaitAfterDeadRunStartInSeconds: number;
   keepApcFromDeadRunEndInSeconds: number;
   backlogDrainingWaitInSeconds: number;
+  forcedAckIntervalInSeconds: number;
+  forcedAckCheckIntervalInSeconds: number;
   vehicleCapacities: VehicleCapacityMap;
   defaultVehicleCapacity: number;
 }

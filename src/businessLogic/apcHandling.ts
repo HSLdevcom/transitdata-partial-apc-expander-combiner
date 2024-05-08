@@ -5,6 +5,7 @@
  * acknowledgments will be done.
  */
 
+import type pino from "pino";
 import type Pulsar from "pulsar-client";
 import { Queue } from "../dataStructures/queue";
 import * as partialApc from "../quicktype/partialApc";
@@ -22,6 +23,7 @@ import {
 import { createSleep } from "../util/sleep";
 import { sumApcValues } from "./partialApcSumming";
 import formProducerMessage from "./producerMessageForming";
+import splitArray from "../util/splitArray";
 
 const calculateWatermarks = ({
   eventTimestamp,
@@ -120,7 +122,9 @@ const splitAlightingFromBoarding = (
 };
 
 const createApcHandler = (
+  logger: pino.Logger,
   config: ProcessingConfig,
+  uniqueVehicleId: UniqueVehicleId,
   partialApcQueue: Queue<PartialApcInboxQueueMessage>,
   outboxQueue: Queue<MessageCollection>,
 ) => {
@@ -129,6 +133,8 @@ const createApcHandler = (
     sendWaitAfterDeadRunStartInSeconds,
     vehicleCapacities,
     keepApcFromDeadRunEndInSeconds,
+    forcedAckIntervalInSeconds,
+    forcedAckCheckIntervalInSeconds,
     defaultVehicleCapacity,
   } = config;
   const sendWaitAfterStopChangeInMilliseconds =
@@ -137,16 +143,25 @@ const createApcHandler = (
     1_000 * sendWaitAfterDeadRunStartInSeconds;
   const keepApcFromDeadRunEndInMilliseconds =
     1_000 * keepApcFromDeadRunEndInSeconds;
+  const forcedAckIntervalInMilliseconds = 1_000 * forcedAckIntervalInSeconds;
+  const forcedAckCheckIntervalInMilliseconds =
+    1_000 * forcedAckCheckIntervalInSeconds;
 
-  let hfpMessageIdsToAcknowledge: Pulsar.MessageId[] = [];
+  type TimedMessageId = Pick<
+    HfpInboxQueueMessage,
+    "messageId" | "eventTimestamp"
+  >;
 
-  const getVehicleCapacity = (uniqueVehicleId: UniqueVehicleId): number =>
+  let hfpMessageIdsToAcknowledge: TimedMessageId[] = [];
+
+  const vehicleCapacity =
     vehicleCapacities.get(uniqueVehicleId) ?? defaultVehicleCapacity;
 
   const prepareHfpForAcknowledging = (
     hfpMessage: HfpInboxQueueMessage,
   ): void => {
-    hfpMessageIdsToAcknowledge.push(hfpMessage.messageId);
+    const { messageId, eventTimestamp } = hfpMessage;
+    hfpMessageIdsToAcknowledge.push({ messageId, eventTimestamp });
   };
 
   const readFromPartialApcQueue = ({
@@ -156,7 +171,7 @@ const createApcHandler = (
     backwardsWatermark: number;
     forwardsWatermark: number;
   }): {
-    partialApcSummed: PartialApcItem | undefined;
+    toBeAggregated: PartialApcInboxQueueMessage[];
     toAckPartialApc: Pulsar.MessageId[];
   } => {
     const toBeAggregated: PartialApcInboxQueueMessage[] = [];
@@ -183,8 +198,7 @@ const createApcHandler = (
         isBeforeForwardsWatermark = false;
       }
     }
-    const partialApcSummed = aggregatePartialApc(toBeAggregated);
-    return { partialApcSummed, toAckPartialApc };
+    return { toBeAggregated, toAckPartialApc };
   };
 
   const formWhatToSend = ({
@@ -198,9 +212,6 @@ const createApcHandler = (
   }): Pulsar.ProducerMessage[] => {
     const toSend: Pulsar.ProducerMessage[] = [];
     if (partialApcSummed != null) {
-      const vehicleCapacity = getVehicleCapacity(
-        current.hfpMessage.uniqueVehicleId,
-      );
       const shouldSplit = previous != null;
       if (shouldSplit) {
         const { alighting, boarding } =
@@ -241,8 +252,8 @@ const createApcHandler = (
     forwardsWatermarkIntervalInMilliseconds: number;
     hfpMessagesAndStops: HfpMessageAndStopPair;
   }): Promise<void> => {
-    // Decide HFP MessageIds to ack before any awaits to avoid race conditions.
-    const toAckHfp = hfpMessageIdsToAcknowledge;
+    // Grab HFP MessageIds to ack before any awaits to avoid race conditions.
+    const toAckHfp = hfpMessageIdsToAcknowledge.map((e) => e.messageId);
     hfpMessageIdsToAcknowledge = [];
 
     const { previous, current } = hfpMessagesAndStops;
@@ -252,10 +263,11 @@ const createApcHandler = (
       forwardsWatermarkIntervalInMilliseconds,
     });
     await waitIfInFuture(forwardsWatermark);
-    const { partialApcSummed, toAckPartialApc } = readFromPartialApcQueue({
+    const { toBeAggregated, toAckPartialApc } = readFromPartialApcQueue({
       backwardsWatermark,
       forwardsWatermark,
     });
+    const partialApcSummed = aggregatePartialApc(toBeAggregated);
     const toSend = formWhatToSend({ partialApcSummed, previous, current });
     const messageCollection: MessageCollection = {
       toSend,
@@ -318,6 +330,80 @@ const createApcHandler = (
       },
     });
   };
+
+  const cropOldHfpMessagesOut = (
+    forwardsWatermark: number,
+  ): TimedMessageId[] => {
+    const isBeforeWatermark = (timedMessageId: TimedMessageId) =>
+      timedMessageId.eventTimestamp < forwardsWatermark;
+    const { start, end } = splitArray(
+      isBeforeWatermark,
+      hfpMessageIdsToAcknowledge,
+    );
+    hfpMessageIdsToAcknowledge = end;
+    return start;
+  };
+
+  /**
+   * HFP for some vehicles misbehaves. We need to clear out the Pulsar topic
+   * backlog eventually or a possible backlog quota might be exceeded, stopping
+   * HFP data from flowing.
+   */
+  setInterval(() => {
+    const nowInMilliseconds = Date.now();
+    const forwardsWatermark =
+      nowInMilliseconds - forcedAckIntervalInMilliseconds;
+    const { toBeAggregated, toAckPartialApc } = readFromPartialApcQueue({
+      backwardsWatermark: -Infinity,
+      forwardsWatermark,
+    });
+    const toAckHfpTimed = cropOldHfpMessagesOut(forwardsWatermark);
+    if (toAckPartialApc.length > 0 || toAckHfpTimed.length > 0) {
+      const collection = {
+        toSend: [],
+        toAckPartialApc,
+        toAckHfp: toAckHfpTimed.map((e) => e.messageId),
+      };
+      if (toAckHfpTimed.length > 0) {
+        logger.warn(
+          {
+            uniqueVehicleId,
+            eventTimestampsOfToBeAcked: {
+              ...{
+                firstHfp: toAckHfpTimed[0]?.eventTimestamp,
+              },
+              ...{
+                lastHfp: toAckHfpTimed.at(-1)?.eventTimestamp,
+              },
+            },
+            remainingHfpMessageIdsToAckLength:
+              hfpMessageIdsToAcknowledge.length,
+            forcedAckIntervalInSeconds,
+          },
+          "HFP messages have not been acknowledged for too long. Forcing acknowledgment now. There might be something wrong in the HFP implementation of this vehicle, for example a lack of PDE and DEP messages.",
+        );
+      }
+      if (toAckPartialApc.length > 0) {
+        logger.warn(
+          {
+            uniqueVehicleId,
+            eventTimestampsOfToBeAcked: {
+              ...{
+                firstPartialApc: toBeAggregated[0]?.eventTimestamp,
+              },
+              ...{
+                lastPartialApc: toBeAggregated.at(-1)?.eventTimestamp,
+              },
+            },
+            remainingPartialApcQueueSize: partialApcQueue.size(),
+            forcedAckIntervalInSeconds,
+          },
+          `Partial APC messages have not been acknowledged for too long. Forcing acknowledgment now. ${toAckHfpTimed.length === 0 && hfpMessageIdsToAcknowledge.length === 0 ? "Check if the HFP data source produces any HFP messages for this vehicle." : ""}`,
+        );
+      }
+      outboxQueue.push(collection);
+    }
+  }, forcedAckCheckIntervalInMilliseconds);
 
   return {
     prepareHfpForAcknowledging,

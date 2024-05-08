@@ -38,6 +38,8 @@ const setEnvironmentVariables = ({
     ]`;
   process.env["DATABASE_CONNECTION_URI"] = postgresConnectionUri;
   process.env["DEFAULT_VEHICLE_CAPACITY"] = "78";
+  process.env["FORCED_ACK_CHECK_INTERVAL_IN_SECONDS"] = "1800";
+  process.env["FORCED_ACK_INTERVAL_IN_SECONDS"] = "7200";
   process.env["HEALTH_CHECK_PORT"] = "8080";
   process.env["KEEP_APC_FROM_DEADRUN_END_IN_SECONDS"] = "1200";
   process.env["PINO_LOG_LEVEL"] = "debug";

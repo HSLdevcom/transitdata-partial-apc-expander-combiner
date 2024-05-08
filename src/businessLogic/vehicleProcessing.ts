@@ -5,6 +5,7 @@
  * the higher-level loops when all test data has been handled.
  */
 
+import type { pino } from "pino";
 import { Queue, createQueue } from "../dataStructures/queue";
 import type {
   EndCondition,
@@ -22,7 +23,9 @@ import createHfpHandler from "./hfpHandling";
 import { createActor } from "./vehicleActor";
 
 const initializeVehicleContext = async (
+  logger: pino.Logger,
   config: ProcessingConfig,
+  uniqueVehicleId: UniqueVehicleId,
   outboxQueue: Queue<MessageCollection>,
   backlogDrainingWaitPromise: Promise<void>,
   hfpEndConditionFuncs?: {
@@ -32,7 +35,13 @@ const initializeVehicleContext = async (
 ): Promise<VehicleContext> => {
   const partialApcQueue = createQueue<PartialApcInboxQueueMessage>();
   const hfpQueue = createQueue<HfpInboxQueueMessage>();
-  const apcFuncs = createApcHandler(config, partialApcQueue, outboxQueue);
+  const apcFuncs = createApcHandler(
+    logger,
+    config,
+    uniqueVehicleId,
+    partialApcQueue,
+    outboxQueue,
+  );
   const hfpFuncs = createHfpHandler(config, hfpQueue, hfpEndConditionFuncs);
   const vehicleActor = createActor(outboxQueue, apcFuncs, hfpFuncs);
   const hfpFeedPromise = hfpFuncs.feedVehicleActor(
@@ -63,6 +72,7 @@ const createHfpEndConditionCounter = (endCondition: EndCondition) => {
 };
 
 const initializeVehicleProcessing = (
+  logger: pino.Logger,
   config: ProcessingConfig,
   outboxQueue: Queue<MessageCollection>,
   endCondition?: EndCondition,
@@ -90,7 +100,9 @@ const initializeVehicleProcessing = (
     let vehicleContext = vehicles.get(uniqueVehicleId);
     if (vehicleContext == null) {
       vehicleContext = await initializeVehicleContext(
+        logger,
         config,
+        uniqueVehicleId,
         outboxQueue,
         backlogDrainingWaitPromise,
         hfpEndConditionFuncs,
