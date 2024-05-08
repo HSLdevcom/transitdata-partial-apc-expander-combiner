@@ -15,7 +15,7 @@ It has to deal with streaming merging requirements, acknowledge read messages at
 
 Some details:
 
-- In general, if several partial APC messages are received per stop, the passenger counts are aggregated.
+- In general, if several partial APC messages are received per stop, their passenger counts are aggregated.
 
 - We merge messages based on the server-side ingest timestamps instead of the reported time in the vehicles as experience has shown that the clocks in the vehicles cannot be trusted.
 
