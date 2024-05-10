@@ -9,9 +9,9 @@ services:
       - "127.0.0.1:8080:8080"
     healthcheck:
       test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"]
-      interval: 1s
-      timeout: 60s
-      retries: 120
+      interval: 5s
+      timeout: 10s
+      retries: 10
 
   pulsar-manager:
     image: "apachepulsar/pulsar-manager:latest"
@@ -63,7 +63,7 @@ services:
           "-W",
           "3",
         ]
-      interval: 30s
+      interval: 10s
       timeout: 10s
       retries: 3
     volumes:
