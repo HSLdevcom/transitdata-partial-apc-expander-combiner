@@ -1,1 +1,1 @@
-When partial-APC messages arrive after a long deadrun has started, match the passenger counts to the latest known stop of the previous vehicle journey. This might happen if the driver signs out of the vehicle journey too early.
+When partial-APC messages arrive after a long deadrun has started, match the passenger counts to the latest known stop of the previous service journey. This might happen if the driver signs out of the service journey too early.
