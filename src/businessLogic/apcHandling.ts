@@ -10,6 +10,7 @@ import type Pulsar from "pulsar-client";
 import { Queue } from "../dataStructures/queue";
 import * as partialApc from "../quicktype/partialApc";
 import {
+  ApcHandlingFunctions,
   HfpInboxQueueMessage,
   HfpMessageAndStop,
   HfpMessageAndStopPair,
@@ -126,7 +127,7 @@ const createApcHandler = (
   uniqueVehicleId: UniqueVehicleId,
   partialApcQueue: Queue<PartialApcInboxQueueMessage>,
   outboxQueue: Queue<MessageCollection>,
-) => {
+): ApcHandlingFunctions => {
   const {
     sendWaitAfterStopChangeInSeconds,
     sendWaitAfterDeadRunStartInSeconds,

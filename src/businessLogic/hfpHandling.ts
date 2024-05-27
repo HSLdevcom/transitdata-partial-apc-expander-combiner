@@ -5,23 +5,18 @@
 
 import type { Actor, AnyActorLogic } from "xstate";
 import type { Queue } from "../dataStructures/queue";
-import type { HfpInboxQueueMessage, ProcessingConfig } from "../types";
+import type {
+  HfpEndConditionFunctions,
+  HfpHandlingFunctions,
+  HfpInboxQueueMessage,
+  ProcessingConfig,
+} from "../types";
 
 const createHfpHandler = (
   config: ProcessingConfig,
   hfpQueue: Queue<HfpInboxQueueMessage>,
-  hfpEndConditionFuncs?: {
-    reportHfpRead: (n: number) => void;
-    isMoreHfpExpected: () => boolean;
-  },
-): {
-  setDeadRunTimer: (momentInMilliseconds: number) => void;
-  removeDeadRunTimer: () => void;
-  feedVehicleActor: (
-    vehicleActor: Actor<AnyActorLogic>,
-    backlogDrainingWaitPromise: Promise<void>,
-  ) => Promise<void>;
-} => {
+  hfpEndConditionFuncs?: HfpEndConditionFunctions | undefined,
+): HfpHandlingFunctions => {
   const { reportHfpRead, isMoreHfpExpected } = hfpEndConditionFuncs ?? {};
 
   const { sendWaitAfterDeadRunStartInSeconds } = config;
