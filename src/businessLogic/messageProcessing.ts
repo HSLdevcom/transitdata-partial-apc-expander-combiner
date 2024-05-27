@@ -129,9 +129,10 @@ const keepProcessingMessages = async (
   config: ProcessingConfig,
   endCondition?: EndCondition,
 ): Promise<void> => {
+  const isTestRun = endCondition != null;
   const outboxQueue = createQueue<MessageCollection>();
   const { pushIntoVehicleQueue, waitForHfpFeeding } =
-    initializeVehicleProsessing(logger, config, outboxQueue, endCondition);
+    initializeVehicleProsessing(logger, config, outboxQueue, isTestRun);
   const parsePartialApc = (message: Pulsar.Message) =>
     parsePartialApcPulsarMessage(logger, message);
   const partialApcPromise = keepFeedingInboxQueueMessages(
@@ -158,16 +159,12 @@ const keepProcessingMessages = async (
     sendAndAck,
     endCondition?.nApcMessages,
   );
-  if (endCondition === undefined) {
-    // Production branch without synchronization
-
+  if (!isTestRun) {
     const promises = [partialApcPromise, hfpPromise, sendAndAckPromise];
     // We expect the promises to stay pending.
     await Promise.race(promises);
     throw new Error("The message processing promises should not get settled");
   } else {
-    // Testing branch with synchronization
-
     await partialApcPromise;
     await hfpPromise;
     await Promise.all([waitForHfpFeeding(), sendAndAckPromise]);

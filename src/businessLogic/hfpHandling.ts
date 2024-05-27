@@ -6,6 +6,7 @@
 import type { Actor, AnyActorLogic } from "xstate";
 import type { Queue } from "../dataStructures/queue";
 import type {
+  ApcHandlingFunctions,
   HfpEndConditionFunctions,
   HfpHandlingFunctions,
   HfpInboxQueueMessage,
@@ -16,6 +17,7 @@ const createHfpHandler = (
   config: ProcessingConfig,
   hfpQueue: Queue<HfpInboxQueueMessage>,
   hfpEndConditionFuncs?: HfpEndConditionFunctions | undefined,
+  apcFuncs?: ApcHandlingFunctions | undefined,
 ): HfpHandlingFunctions => {
   const { reportHfpRead, isMoreHfpExpected } = hfpEndConditionFuncs ?? {};
 
@@ -122,6 +124,8 @@ const createHfpHandler = (
     }
 
     vehicleActor.stop();
+
+    apcFuncs?.informApcWhenVehicleActorStopped?.();
   };
 
   return {
