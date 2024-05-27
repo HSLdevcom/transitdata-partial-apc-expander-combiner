@@ -62,9 +62,14 @@ const createHfpHandler = (
 
     vehicleActor.start();
 
-    while (isMoreHfpExpected === undefined || isMoreHfpExpected()) {
+    const isTestRun = isMoreHfpExpected !== undefined;
+    // The following code is a bit tricky. We need to handle receiving HFP
+    // messages and feeding them onwards. We also must take care of the
+    // cancellable timers that start when the vehicle starts a dead run. Here
+    // we create the timer but vehicleActor decides when that happens.
+    while (!isTestRun || isMoreHfpExpected()) {
       if (deadRunTimerMomentInMilliseconds === undefined) {
-        // In this branch we are not on short dead run.
+        // In this branch we are not on a short dead run.
         // eslint-disable-next-line no-await-in-loop
         await popAndSend();
       } else if (deadRunTimerTimeout === undefined) {
@@ -72,6 +77,8 @@ const createHfpHandler = (
         // either process the next message, trigger the timer or set the timer.
         const peekedMessage = hfpQueue.peekSync();
         if (peekedMessage === undefined) {
+          // No message to receive so we either set a current timer or trigger a
+          // historical timer.
           const nowInMilliseconds = Date.now();
           const diffInMilliseconds =
             deadRunTimerMomentInMilliseconds - nowInMilliseconds;
@@ -86,9 +93,11 @@ const createHfpHandler = (
         } else if (
           peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds
         ) {
+          // vehicleActor shall decide how the next message affects the timer.
           // eslint-disable-next-line no-await-in-loop
           await popAndSend();
         } else {
+          // The next message occurs after the timer.
           triggerDeadRunTimer();
         }
       } else {
@@ -98,16 +107,19 @@ const createHfpHandler = (
         // eslint-disable-next-line no-await-in-loop
         const peekedMessage = await hfpQueue.peek();
         // Due to time passing, now either triggerDeadRunTimer() has already
-        // been called by setTimeout or peekedMessage arrived before that.
+        // been called by setTimeout or peekedMessage has arrived before that.
+        //
         // ESLint does not recognize time passing.
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (deadRunTimerTimeout != null) {
           // In this branch triggerDeadRunTimer() has not been called yet so it
           // makes sense to compare the timestamps.
           if (peekedMessage.eventTimestamp < deadRunTimerMomentInMilliseconds) {
+            // vehicleActor shall decide how the next message affects the timer.
             // eslint-disable-next-line no-await-in-loop
             await popAndSend();
           } else {
+            // The next message occurs after the timer.
             triggerDeadRunTimer();
           }
         }
