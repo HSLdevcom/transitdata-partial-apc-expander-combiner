@@ -375,6 +375,7 @@ const createApcHandler = (
                 lastHfp: toAckHfpTimed.at(-1)?.eventTimestamp,
               },
             },
+            forcedAckHfpLength: toAckHfpTimed.length,
             remainingHfpMessageIdsToAckLength:
               hfpMessageIdsToAcknowledge.length,
             forcedAckIntervalInSeconds,
@@ -394,6 +395,7 @@ const createApcHandler = (
                 lastPartialApc: toBeAggregated.at(-1)?.eventTimestamp,
               },
             },
+            forcedAckPartialApcLength: toAckPartialApc.length,
             remainingPartialApcQueueSize: partialApcQueue.size(),
             forcedAckIntervalInSeconds,
           },
