@@ -289,7 +289,9 @@ export const createActor = (
   outboxQueue: Queue<MessageCollection>,
   apcFuncs: ApcHandlingFunctions,
   hfpFuncs: HfpHandlingFunctions,
-): xstate.Actor<xstate.AnyActorLogic> => {
+  // Omitting the return type enables TypeScript to deduce the crazy type in
+  // full.
+) => {
   const {
     prepareHfpForAcknowledging,
     sendApcMidServiceJourney,
