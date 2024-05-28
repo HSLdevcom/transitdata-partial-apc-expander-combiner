@@ -25,18 +25,9 @@
           "vehicleLoad": 0,
           "vehicleLoadRatio": 0,
           "doorCounts": [
-            {
-              "door": "1",
-              "count": [{ "clazz": "adult", "in": 0, "out": 0 }]
-            },
-            {
-              "door": "2",
-              "count": [{ "clazz": "adult", "in": 0, "out": 5 }]
-            },
-            {
-              "door": "3",
-              "count": [{ "clazz": "adult", "in": 0, "out": 0 }]
-            }
+            { "door": "1", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 0, "out": 5 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] }
           ]
         }
       }
