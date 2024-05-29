@@ -492,26 +492,18 @@ export const createActor = (
             message: [
               {
                 target: "OnLongDeadRun",
-                actions: {
-                  type: "ackDeadRunMessage",
-                },
-                guard: {
-                  type: "isDeadRun",
-                },
+                actions: { type: "ackDeadRunMessage" },
+                guard: "isDeadRun",
               },
               {
                 target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcAfterLongDeadRun",
-                  },
+                  { type: "sendApcAfterLongDeadRun" },
                   xstate.assign(advanceCurrentStop),
                 ],
-                guard: {
-                  type: "isDeparture",
-                },
+                guard: "isDeparture",
               },
               {
                 target: "BeforeFirstDepartureAfterLongDeadRun",
@@ -532,18 +524,14 @@ export const createActor = (
                   { type: "ackLater" },
                   xstate.assign(switchCurrentToPrevious),
                 ],
-                guard: {
-                  type: "isDeadRun",
-                },
+                guard: "isDeadRun",
               },
               {
                 target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcForCurrent",
-                  },
+                  { type: "sendApcForCurrent" },
                   xstate.assign(advanceCurrentStop),
                 ],
                 guard: {
@@ -555,9 +543,7 @@ export const createActor = (
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcSplitBetweenServiceJourneys",
-                  },
+                  { type: "sendApcSplitBetweenServiceJourneys" },
                   xstate.assign(advanceCurrentStop),
                   xstate.assign(removePrevious),
                 ],
@@ -582,23 +568,17 @@ export const createActor = (
               {
                 target: "OnLongDeadRun",
                 actions: [{ type: "ackLater" }, xstate.assign(removeCurrent)],
-                guard: {
-                  type: "isDeadRun",
-                },
+                guard: "isDeadRun",
               },
               {
                 target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcAfterLongDeadRun",
-                  },
+                  { type: "sendApcAfterLongDeadRun" },
                   xstate.assign(advanceCurrentStop),
                 ],
-                guard: {
-                  type: "isDeparture",
-                },
+                guard: "isDeparture",
               },
               {
                 target: "BeforeFirstDepartureAfterLongDeadRun",
@@ -615,21 +595,15 @@ export const createActor = (
             timer: {
               target: "OnLongDeadRun",
               actions: [
-                {
-                  type: "sendApcForPrevious",
-                },
+                { type: "sendApcForPrevious" },
                 xstate.assign(removePrevious),
               ],
             },
             message: [
               {
                 target: "OnShortDeadRun",
-                actions: {
-                  type: "ackDeadRunMessage",
-                },
-                guard: {
-                  type: "isDeadRun",
-                },
+                actions: { type: "ackDeadRunMessage" },
+                guard: "isDeadRun",
               },
               {
                 target: "OnServiceJourney",
@@ -637,14 +611,10 @@ export const createActor = (
                   { type: "ackLater" },
                   xstate.assign(switchPreviousToCurrent),
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcForCurrent",
-                  },
+                  { type: "sendApcForCurrent" },
                   xstate.assign(advanceCurrentStop),
                 ],
-                guard: {
-                  type: "isPreviousAndIsDeparture",
-                },
+                guard: "isPreviousAndIsDeparture",
               },
               {
                 target: "OnServiceJourney",
@@ -653,24 +623,18 @@ export const createActor = (
                   xstate.assign(switchPreviousToCurrent),
                   xstate.assign(setCurrent),
                 ],
-                guard: {
-                  type: "isPreviousAndNotIsDeparture",
-                },
+                guard: "isPreviousAndNotIsDeparture",
               },
               {
                 target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
-                  {
-                    type: "sendApcSplitBetweenServiceJourneys",
-                  },
+                  { type: "sendApcSplitBetweenServiceJourneys" },
                   xstate.assign(advanceCurrentStop),
                   xstate.assign(removePrevious),
                 ],
-                guard: {
-                  type: "notIsPreviousAndIsDeparture",
-                },
+                guard: "notIsPreviousAndIsDeparture",
               },
               {
                 target: "BeforeFirstDepartureAfterShortDeadRun",
@@ -678,12 +642,8 @@ export const createActor = (
               },
             ],
           },
-          entry: {
-            type: "startDeadRunTimer",
-          },
-          exit: {
-            type: "removeDeadRunTimer",
-          },
+          entry: "startDeadRunTimer",
+          exit: "removeDeadRunTimer",
           description:
             "The vehicle has not been on this dead run for long. It might be a mistake in the HFP implementation. It might be a break between two service journeys. It might be the start of a long dead run.",
         },
