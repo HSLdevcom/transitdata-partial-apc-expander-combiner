@@ -121,12 +121,6 @@ const removePrevious = (): Partial<VehicleMachineContext> => {
   };
 };
 
-const removeCurrent = (): Partial<VehicleMachineContext> => {
-  return {
-    currentServiceJourneyState: undefined,
-  };
-};
-
 export const setCurrent = ({
   context,
   event,
@@ -136,6 +130,7 @@ export const setCurrent = ({
 
   let { previousServiceJourneyState } = context;
   if (
+    previousServiceJourneyState == null &&
     context.currentServiceJourneyState != null &&
     !deepEqual(
       context.currentServiceJourneyState.serviceJourneyId,
@@ -279,6 +274,14 @@ export const isDeparture = ({
   return result;
 };
 
+const isCurrent = ({ context, event }: VehicleMachineCustomArgs): boolean => {
+  assert(isVehicleMachineMessageEvent(event));
+  return deepEqual(
+    event.message.vehicleJourneyId,
+    context.currentServiceJourneyState?.serviceJourneyId,
+  );
+};
+
 const isPrevious = ({ context, event }: VehicleMachineCustomArgs): boolean => {
   assert(isVehicleMachineMessageEvent(event));
   return deepEqual(
@@ -417,6 +420,13 @@ export const createActor = (
         },
       },
       guards: {
+        isCurrentAndIsDeparture: xstate.and([isCurrent, isDeparture]),
+
+        isCurrentAndNotIsDeparture: xstate.and([
+          isCurrent,
+          xstate.not(isDeparture),
+        ]),
+
         isDeadRun,
 
         isDeparture,
@@ -434,6 +444,11 @@ export const createActor = (
 
         isPreviousDefinedAndIsDeparture: xstate.and([
           isPreviousDefined,
+          isDeparture,
+        ]),
+
+        notIsCurrentAndIsDeparture: xstate.and([
+          xstate.not(isCurrent),
           isDeparture,
         ]),
 
@@ -477,7 +492,7 @@ export const createActor = (
      * to take. That is why we have several transitions into the same target.
      */
     .createMachine({
-      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAGwB2AIz4ATGu0qAnAIAcK4wFZtAFg0AaEAE9EVgwGZ8BleYFvzVywbmAL5B9qiYuAQkFFS0DCzsXLA8-BoiSCASUrLyGcoIXtr4Gmp+asauBlZWAubG9k4IdcbFbhoqrgICrq7G2q4hYejYeERklDT0TKyc3LxgfNrp4pIycsQK+Wqexf3qXZ57ag2Iaipariq1Na7mt3UGgyDhI1HEAMpgAE4AbthgAClyMwvsQwA5Zsl5oJlplVjkNnlEO0NFoVNpAq5NOYNF0VCcEIE1PhLH0BNoMXUKVYni9ImNPr9-kCQWCIUkUgs0gosmtcqB8hocS0KSpDF5cdpjGorATccYrPh-OY9BVRcYFbThvSSIy-lhAcDQeDIZzFrDeQjNsjLMTAgYKjUZcYjPVHMj9EUBGKNPcrBq-DTQs9taNdd99YbWSaOdDXBb4etrQgUe5UQI1AIXPpPCY5VYOrtPDjvJ0TGotRFRgAhMAAM3IXzAADEMF9YNJaGI6F9pCCwABBOvSb4xSbxGax-jCHmJ-lKZEaF1K8o1fxYiwagk2Az4LOkvRWKWuAsqSuvfC1htN1vtztgbu9-tDkdfMdxaaJOapBPZJNIlMSgEfBelRAxtG9LEanxd0misdx-XOPx2msJdjHPekr0bFs2w7Lsez7JsX1HCYPwSU1oSWWc-3nQUsyKYsMXabZ1FlWC9BUJUNCsVd+j0bjgmDOkww+NBG3vCd2FkLgvhhai+URAVkWlEljDQswzGqaoDAJPxOMCIVtCFb0UIGITQzed4xN7MjJ2-BYZwyS1-yUlMVEVMVhXadytJ6AkDHApUfFMTp9nMAKMJEqzxNsr8oR-eSrQA3F3Eza4jzU7ZzD8OUTBaNRygMTMzkuYrIss6yJM-Cj+Copy50UhdCXcXROk0f03FKX05QxTiTNMeDrBVO5yoZSrYpqhZ40SlymrcDw9DcdcHSXbp8wLfBMw0bRvHMK4yvMqsKpiqZyKnBYrF-BTk284oC06XFwPTcw5Xc8wQJCmxtOMWpRqwm9cPvR9CMHYdvmimzTrs+KHKupLXL296vA1fwIJ8VwhVerodBlCkUR4+U-vrbDbzwh8COfMGvghqqzvsvhuXqmjGvye0STUW5LgMdpsu2uUVXcQIsx8dRAn6QShiOy9iYBu98KfIiqZpibzvNGbaMQTxd1C8LPFRoyYMaEpvHwMwNE8E9-A1E8ievHC5fJhXQdfZWobis1pqZ67kuuJUVSPbwUs8uVAne71spPbZrhxEJg2IcgIDgBRhLAdWWcQABaYCAoCvRajey5-blE8SSuKpttuXQUtG6JSLdtPkx4vcunJbZ4L0k8CVcCDTfaAsOe5k86hrj4I2ZI02QbgCqmJUxUV6DGip47R-JqfBpVxc2+j6c3tFtknAflkHiLfOvJKn1yZ-X848YpHwpTYxopXer6xQ6bv0T8EfXfPr34aanEvcuiZkqIZI8rgCRnC0DieCWJahYlAvvWWZNgaUxduNeuf9Zr5HgruPiR48RDzFHKNS+VuJdF6HcdyPhY5BCAA */
+      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAKwAmAOz4BAZl0AOHQE4BGlRoAsARgA0IAJ6ILRtfhX6rR-QMMqLANh0zAF9gu1RMXAISCipaBhZ2LlgefisRJBAJKVl5TOUEDSt-fCs1HX81UyMa-y87RwR-C1cNfQsdHU0dXysNUPD0bDwiMkoaeiZWTm5eMD41DPFJGTliBQK2rR0WoxUBK0Mdo38Gpw0jUs0rAI7djwGQCOHo4gBlMAAnADdsMAApcjMT7EMD2GYpOaCJZZFa5db5RDFKxWfCVPZBKwqKwCASnByIPZadpqPxVSwmAQWR7PKKjD4-P6A4Gg8HJVLzdIKbKrPKgApYoJoow9crFNQWNpnBA4-QqbQ3FT+fwCFTYlr9MJPIZ0kgM35YAFAkFgiEchYwnnwjZItU6NGqyUBNR1Kw6aVlFH4fR1Zo3CwqEUBGk6kZ6r4Go0s03sqE6S1wtY2mV+e36IoqHairpGCwe4wWfBqNReEwaKmBfz6EORMPvCNM42ss1QiwJnJJxEy-xu0rVSUabr7NQewKo5wCXPYwwdE41l74ABCYAAZuRPmAAGIYT6waS0MR0T7SYFgACCK+kX1iEwS01j-GE3MTfKUSMOl0l7SCLuVVbzBIINYAhotYHhUmoPqHCo850sua4btuu77mAh7HqeF5Xp8N7xFMSSzGk7a8gi-LvuW+BBMqZiqoOljSti9p6MWGhVkUHhVrBIzweuW47nuB5HieG6Yde4y4YkLb8Isz4dq+ApUoWOhKiWFgDhK7TSlW+huLRHR1BY7H+JxrxvGg64oXe7CyFwnzQjJxHJlUIE9oObqeJ4RwqPRSmlD2+w6GUzgBEZWq0nWpnmeJ94EfMT6ZFanakd2hbKtOxTNKpHTuoBNSuBYk4+no-jloGRjGfSZnHlF+GQoR9nWl2OL2uWjotB4FxqgBjSytpGhtEY5YsRUg3lXqlUWXhknzNJ8UviRb4ICKRYaHoRQGSKZhuh6JYlHihzNF0AZmDoo3vON1VTXw8b1YlC1LQNJY7JmXiHLoHqqSU5ZlPsSqmKYp0RVVkwSQ+8xtjdclIsqpQdIGxb5W0PojoBxTOPgRiHC0PgnGYmjldxiF8ShaFCeel5fIDE0gzFdmzbJ80FOYlxeBKBkumYyrI918MUcYBxVl4AXpvjq48Uh-GoYJGHk58lMXaDfBcnTDldl4IGZqYPZeB0pJeSjfTaS4xg7CiBV9CLCG8chAnocJMty8D0W1dNRENUlNQgS6kpMaYNyDvmKpuN4OIHD4AUnaFoYEATVsSyT0tYQ7lmXddytuwtOJmPgWOqi6GNKv7KNKtpSnpvoUFPS4oRasQ5AQHAChhWAEMM4g9o9ri5bGFiErlFzSI7PgLFFDiIp+LikqnThjvzQlkMINiaIh+Xpgm6t0qQfK1gBJtK1KoLAMNoazImo0yz08mubEj2bqGJ4liF40uYgemOIeZBaieGoFti0TNukyJbCYkZ4t0vpKb0PZixlCqC4DSgFN7ZxuH+ToLpSTUkjrWEy50QFp1uozVEHc-rd3UC0bKjQWKonVJ0EqQQehWB-oTa2ktbZk0TtgyyoCuyziLEEHOgQAzKg9B4XqNxcQ9EzM0Sc1dghAA */
       context: {
         previousServiceJourneyState: undefined,
         currentServiceJourneyState: undefined,
@@ -528,38 +543,44 @@ export const createActor = (
               },
               {
                 target: "OnServiceJourney",
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
+                guard: "isCurrentAndNotIsDeparture",
+              },
+              {
+                target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
                   xstate.assign(setCurrent),
                   { type: "sendApcForCurrent" },
                   xstate.assign(advanceCurrentStop),
                 ],
-                guard: {
-                  type: "notIsPreviousDefinedAndIsDeparture",
-                },
+                guard: "isCurrentAndIsDeparture",
               },
               {
                 target: "OnServiceJourney",
                 actions: [
                   { type: "ackLater" },
+                  xstate.assign(switchCurrentToPrevious),
                   xstate.assign(setCurrent),
                   { type: "sendApcSplitBetweenServiceJourneys" },
                   xstate.assign(advanceCurrentStop),
                   xstate.assign(removePrevious),
                 ],
-                guard: {
-                  type: "isPreviousDefinedAndIsDeparture",
-                },
+                guard: "notIsCurrentAndIsDeparture",
               },
               {
-                target: "OnServiceJourney",
-                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
+                target: "BeforeFirstDepartureAfterShortDeadRun",
+                actions: [
+                  { type: "ackLater" },
+                  xstate.assign(switchCurrentToPrevious),
+                  xstate.assign(setCurrent),
+                ],
               },
             ],
           },
 
           description:
-            "The vehicle is signed onto a service journey. We trust it is the right service journey.",
+            "The vehicle is signed onto a service journey. We trust it is the right service journey as the first departure has already happened. In this state any previous service journey has been removed from the context.",
         },
 
         BeforeFirstDepartureAfterLongDeadRun: {
@@ -567,7 +588,7 @@ export const createActor = (
             message: [
               {
                 target: "OnLongDeadRun",
-                actions: [{ type: "ackLater" }, xstate.assign(removeCurrent)],
+                actions: [{ type: "ackLater" }],
                 guard: "isDeadRun",
               },
               {
@@ -656,7 +677,7 @@ export const createActor = (
             message: [
               {
                 target: "OnShortDeadRun",
-                actions: [{ type: "ackLater" }, xstate.assign(removeCurrent)],
+                actions: [{ type: "ackLater" }],
                 guard: "isDeadRun",
               },
               {
