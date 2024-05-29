@@ -1,0 +1,1 @@
+When the service journey changes and the final stop of the ending service journey and the first stop of the starting service journey is the same stop, match alighting passengers to the ending service journey and boarding passengers to the starting service journey. In this case the driver signs onto the right service journey, signs out and signs back onto it.
