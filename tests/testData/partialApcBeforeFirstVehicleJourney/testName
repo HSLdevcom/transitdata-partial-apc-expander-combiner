@@ -1,1 +1,1 @@
-When partial-APC messages arrive at the end of a long deadrun but before the vehicle journey has started, match recent partial-APC messages to the first stop of the new vehicle journey. This might happen if the driver opens the doors before signing onto the first vehicle journey.
+When partial-APC messages arrive at the end of a long dead run but before the service journey has started, match recent partial-APC messages to the first stop of the new service journey. This might happen if the driver opens the doors before signing onto the first service journey.

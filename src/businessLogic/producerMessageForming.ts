@@ -67,19 +67,19 @@ const combineHfpAndPartialApc = (
     stop: serviceJourneyStop.currentStop,
   };
   const base = { ...hfpData.payload, ...reliableServiceJourney };
+  // Drop vehiclecounts because of the capitalization difference between partial
+  // APC and passengerCount.
+  const { vehiclecounts, ...apcDataWithoutVehiclecounts } = apcData;
   const payload: passengerCount.IPayload = {
     ...base,
-    ...apcData,
+    ...apcDataWithoutVehiclecounts,
     tst,
     tsi: tst,
     loc:
       hfpData.payload.loc != null
         ? transformLocToString(hfpData.payload.loc)
         : null,
-    vehicleCounts: transformVehicleCounts(
-      apcData.vehiclecounts,
-      vehicleCapacity,
-    ),
+    vehicleCounts: transformVehicleCounts(vehiclecounts, vehicleCapacity),
     // Override the field oper of the partial APC data as the APC devices likely
     // do not have access to the correct value.
     ...(hfpData.payload.oper == null ? {} : { oper: hfpData.payload.oper }),

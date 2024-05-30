@@ -1,7 +1,7 @@
 import type { hfp } from "../src/protobuf/hfp";
 import type { passengerCount } from "../src/protobuf/passengerCount";
 
-export type MqttDumpLine = `${string} ${string} {${string}`;
+export type MqttDumpLine = `${string} ${string} {${string}}`;
 
 export type MqttHfpPayload = Record<
   string,

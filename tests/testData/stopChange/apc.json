@@ -25,10 +25,7 @@
           "vehicleLoad": 12,
           "vehicleLoadRatio": 0.1538462,
           "doorCounts": [
-            {
-              "door": "2",
-              "count": [{ "clazz": "adult", "in": 1, "out": 4 }]
-            }
+            { "door": "2", "count": [{ "clazz": "adult", "in": 1, "out": 4 }] }
           ]
         }
       }
