@@ -1,0 +1,1 @@
+When the driver selects wrong service journeys repeatedly during the dead run but no departure-like HFP event is emitted from those service journeys, ignore the wrong service journeys when creating the APC messages
