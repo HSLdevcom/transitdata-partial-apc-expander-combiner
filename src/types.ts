@@ -1,4 +1,5 @@
 import type Pulsar from "pulsar-client";
+import { Actor, AnyActorLogic } from "xstate";
 import type { Queue } from "./dataStructures/queue";
 import { hfp } from "./protobuf/hfp";
 import * as partialApc from "./quicktype/partialApc";
@@ -68,12 +69,6 @@ export interface RuntimeResources {
   producer: Pulsar.Producer;
   hfpConsumer: Pulsar.Consumer;
   partialApcConsumer: Pulsar.Consumer;
-}
-
-export interface EndCondition {
-  nHfpMessages: number;
-  nPartialApcMessages: number;
-  nApcMessages: number;
 }
 
 export interface PartialApcItem {
@@ -191,4 +186,42 @@ export interface MessageCollection {
   toSend: Pulsar.ProducerMessage[];
   toAckPartialApc: Pulsar.MessageId[];
   toAckHfp: Pulsar.MessageId[];
+}
+
+export interface ApcHandlingFunctions {
+  prepareHfpForAcknowledging: (hfpMessage: HfpInboxQueueMessage) => void;
+  sendApcMidServiceJourney: (
+    hfpMessageAndStop: HfpMessageAndStop,
+  ) => Promise<void>;
+  sendApcFromBeginningOfLongDeadRun: (
+    hfpMessageAndStop: HfpMessageAndStop,
+  ) => Promise<void>;
+  sendApcSplitBetweenServiceJourneys: (
+    hfpMessagesAndStops: NonNullableFields<HfpMessageAndStopPair>,
+  ) => Promise<void>;
+  sendApcAfterLongDeadRun: (
+    hfpMessageAndStop: HfpMessageAndStop,
+  ) => Promise<void>;
+  informApcWhenVehicleActorStopped: (() => void) | undefined;
+}
+
+export interface HfpHandlingFunctions {
+  setDeadRunTimer: (momentInMilliseconds: number) => void;
+  removeDeadRunTimer: () => void;
+  feedVehicleActor: (
+    vehicleActor: Actor<AnyActorLogic>,
+    backlogDrainingWaitPromise: Promise<void>,
+  ) => Promise<void>;
+}
+
+export interface EndCondition {
+  nHfpMessages: number;
+  nPartialApcMessages: number;
+  nApcMessages: number;
+}
+
+export interface HfpEndConditionFunctions {
+  reportHfpQueued: (n: number) => void;
+  reportHfpRead: (n: number) => void;
+  isMoreHfpExpected: () => boolean;
 }

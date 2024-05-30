@@ -10,12 +10,11 @@ import * as xstate from "xstate";
 import { Queue } from "../dataStructures/queue";
 import { hfp } from "../protobuf/hfp";
 import {
+  ApcHandlingFunctions,
   HfpDeadRunInboxQueueMessage,
+  HfpHandlingFunctions,
   HfpInboxQueueMessage,
-  HfpMessageAndStop,
-  HfpMessageAndStopPair,
   MessageCollection,
-  NonNullableFields,
   ServiceJourneyState,
   ServiceJourneyStop,
   StopId,
@@ -288,25 +287,8 @@ const isPreviousDefined = ({ context }: VehicleMachineCustomArgs): boolean => {
 
 export const createActor = (
   outboxQueue: Queue<MessageCollection>,
-  apcFuncs: {
-    prepareHfpForAcknowledging: (hfpMessage: HfpInboxQueueMessage) => void;
-    sendApcMidServiceJourney: (
-      hfpMessageAndStop: HfpMessageAndStop,
-    ) => Promise<void>;
-    sendApcFromBeginningOfLongDeadRun: (
-      hfpMessageAndStop: HfpMessageAndStop,
-    ) => Promise<void>;
-    sendApcSplitBetweenServiceJourneys: (
-      hfpMessagesAndStops: NonNullableFields<HfpMessageAndStopPair>,
-    ) => Promise<void>;
-    sendApcAfterLongDeadRun: (
-      hfpMessageAndStop: HfpMessageAndStop,
-    ) => Promise<void>;
-  },
-  hfpFuncs: {
-    removeDeadRunTimer: () => void;
-    setDeadRunTimer: (momentInMilliseconds: number) => void;
-  },
+  apcFuncs: ApcHandlingFunctions,
+  hfpFuncs: HfpHandlingFunctions,
 ): xstate.Actor<xstate.AnyActorLogic> => {
   const {
     prepareHfpForAcknowledging,

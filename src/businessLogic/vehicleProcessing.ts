@@ -8,7 +8,7 @@
 import type { pino } from "pino";
 import { Queue, createQueue } from "../dataStructures/queue";
 import type {
-  EndCondition,
+  HfpEndConditionFunctions,
   HfpInboxQueueMessage,
   InboxQueueMessage,
   MessageCollection,
@@ -28,10 +28,8 @@ const initializeVehicleContext = async (
   uniqueVehicleId: UniqueVehicleId,
   outboxQueue: Queue<MessageCollection>,
   backlogDrainingWaitPromise: Promise<void>,
-  hfpEndConditionFuncs?: {
-    reportHfpRead: (n: number) => void;
-    isMoreHfpExpected: () => boolean;
-  },
+  isTestRun: boolean,
+  hfpEndConditionFuncs?: HfpEndConditionFunctions | undefined,
 ): Promise<VehicleContext> => {
   const partialApcQueue = createQueue<PartialApcInboxQueueMessage>();
   const hfpQueue = createQueue<HfpInboxQueueMessage>();
@@ -41,8 +39,14 @@ const initializeVehicleContext = async (
     uniqueVehicleId,
     partialApcQueue,
     outboxQueue,
+    isTestRun,
   );
-  const hfpFuncs = createHfpHandler(config, hfpQueue, hfpEndConditionFuncs);
+  const hfpFuncs = createHfpHandler(
+    config,
+    hfpQueue,
+    hfpEndConditionFuncs,
+    apcFuncs,
+  );
   const vehicleActor = createActor(outboxQueue, apcFuncs, hfpFuncs);
   const hfpFeedPromise = hfpFuncs.feedVehicleActor(
     vehicleActor,
@@ -55,17 +59,22 @@ const initializeVehicleContext = async (
   };
 };
 
-const createHfpEndConditionCounter = (endCondition: EndCondition) => {
-  const { nHfpMessages } = endCondition;
+const createHfpEndConditionCounter = (): HfpEndConditionFunctions => {
+  let nHfpQueued = 0;
   let nHfpRead = 0;
+
+  const reportHfpQueued = (n: number): void => {
+    nHfpQueued += n;
+  };
 
   const reportHfpRead = (n: number): void => {
     nHfpRead += n;
   };
 
-  const isMoreHfpExpected = (): boolean => nHfpRead < nHfpMessages;
+  const isMoreHfpExpected = (): boolean => nHfpRead < nHfpQueued;
 
   return {
+    reportHfpQueued,
     reportHfpRead,
     isMoreHfpExpected,
   };
@@ -75,15 +84,12 @@ const initializeVehicleProcessing = (
   logger: pino.Logger,
   config: ProcessingConfig,
   outboxQueue: Queue<MessageCollection>,
-  endCondition?: EndCondition,
+  isTestRun: boolean,
 ) => {
   const vehicles = new Map<UniqueVehicleId, VehicleContext>();
-  let hfpEndConditionFuncs:
-    | { reportHfpRead: (n: number) => void; isMoreHfpExpected: () => boolean }
-    | undefined;
-  if (endCondition != null) {
-    hfpEndConditionFuncs = createHfpEndConditionCounter(endCondition);
-  }
+  const hfpEndConditionFuncs = isTestRun
+    ? createHfpEndConditionCounter()
+    : undefined;
 
   const { backlogDrainingWaitInSeconds } = config;
   const backlogDrainingWaitInMilliseconds =
@@ -105,6 +111,7 @@ const initializeVehicleProcessing = (
         uniqueVehicleId,
         outboxQueue,
         backlogDrainingWaitPromise,
+        isTestRun,
         hfpEndConditionFuncs,
       );
       vehicles.set(uniqueVehicleId, vehicleContext);
@@ -112,6 +119,7 @@ const initializeVehicleProcessing = (
     if (message.type === "partialApc") {
       vehicleContext.partialApcQueue.push(message);
     } else {
+      hfpEndConditionFuncs?.reportHfpQueued(1);
       vehicleContext.hfpQueue.push(message);
     }
   };

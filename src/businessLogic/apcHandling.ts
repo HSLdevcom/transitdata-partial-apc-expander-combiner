@@ -10,6 +10,7 @@ import type Pulsar from "pulsar-client";
 import { Queue } from "../dataStructures/queue";
 import * as partialApc from "../quicktype/partialApc";
 import {
+  ApcHandlingFunctions,
   HfpInboxQueueMessage,
   HfpMessageAndStop,
   HfpMessageAndStopPair,
@@ -126,7 +127,8 @@ const createApcHandler = (
   uniqueVehicleId: UniqueVehicleId,
   partialApcQueue: Queue<PartialApcInboxQueueMessage>,
   outboxQueue: Queue<MessageCollection>,
-) => {
+  isTestRun: boolean,
+): ApcHandlingFunctions => {
   const {
     sendWaitAfterStopChangeInSeconds,
     sendWaitAfterDeadRunStartInSeconds,
@@ -155,6 +157,14 @@ const createApcHandler = (
 
   const vehicleCapacity =
     vehicleCapacities.get(uniqueVehicleId) ?? defaultVehicleCapacity;
+
+  let forcedAckTimer: NodeJS.Timeout | undefined;
+  const informApcWhenVehicleActorStopped = isTestRun
+    ? (): void => {
+        clearInterval(forcedAckTimer);
+        forcedAckTimer = undefined;
+      }
+    : undefined;
 
   const prepareHfpForAcknowledging = (
     hfpMessage: HfpInboxQueueMessage,
@@ -348,7 +358,7 @@ const createApcHandler = (
    * backlog eventually or a possible backlog quota might be exceeded, stopping
    * HFP data from flowing.
    */
-  setInterval(() => {
+  forcedAckTimer = setInterval(() => {
     const nowInMilliseconds = Date.now();
     const forwardsWatermark =
       nowInMilliseconds - forcedAckIntervalInMilliseconds;
@@ -412,6 +422,7 @@ const createApcHandler = (
     sendApcFromBeginningOfLongDeadRun,
     sendApcSplitBetweenServiceJourneys,
     sendApcAfterLongDeadRun,
+    informApcWhenVehicleActorStopped,
   };
 };
 
