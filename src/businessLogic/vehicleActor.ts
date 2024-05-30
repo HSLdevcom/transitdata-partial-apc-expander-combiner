@@ -121,6 +121,12 @@ const removePrevious = (): Partial<VehicleMachineContext> => {
   };
 };
 
+const removeCurrent = (): Partial<VehicleMachineContext> => {
+  return {
+    currentServiceJourneyState: undefined,
+  };
+};
+
 export const setCurrent = ({
   context,
   event,
@@ -289,7 +295,9 @@ export const createActor = (
   outboxQueue: Queue<MessageCollection>,
   apcFuncs: ApcHandlingFunctions,
   hfpFuncs: HfpHandlingFunctions,
-): xstate.Actor<xstate.AnyActorLogic> => {
+  // Omitting the return type enables TypeScript to deduce the crazy type in
+  // full.
+) => {
   const {
     prepareHfpForAcknowledging,
     sendApcMidServiceJourney,
@@ -464,8 +472,12 @@ export const createActor = (
         },
       },
     })
+    /**
+     * In XState, guards determine both the target state and the list of actions
+     * to take. That is why we have several transitions into the same target.
+     */
     .createMachine({
-      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAOwBmAIz41ANgAsalQCYAnAFY1agBzWANCACeiDVaP4DAgRrM6jVjQI6JmoAviH2qJi4BCQUVLQMLOxcsDz8GiJIIBJSsvJZyggqGm5GOsXqZnoaKipmKvZOCGpmZvhWKiZGKnpBViYDJmER6Nh4RGSUNPRMrJzcvGB8RpnikjJyxAqFVmZaQb1Wu7U6AlZ6jYgWOu49RkaaXXuGwyCRYzHEAMpgAE4AbtgwAApcjMX7EMAOeapRaCVbZdZ5LYFZw6ALtcp6KpWLwmAwNRyIEw6G4abw4-zVI5mV7vaITH4AoGg8GQ6EpNJLDIKHIbfKgQoaEw9bSGfEtWrdIwXIkIcxucy6dQmDTlMxWHR00YMkhMwFYEFgiFQmFc5YIvnI7bOEznfACYoCMoaNSeLqXBDkt34Hx6M7kvSmGVWbVRcZ6v4Go1s02cuFqS1IzY2hBGQImfD3GquFTox6ypqutSZmpqPQ2FSBQNhj74ABCYAAZuRfmAAGIYX6waS0MR0X7ScFgM1w4S85MCpTOWpaKoPII+EwCXpqT1GMxuAwVmoZyt6PS1hmNlttzvd3tgfuD4ej9JJ3Ip1Fe4xqfDFV3CzRnTSFxCHB1-GXFd9E6NQNyPcYT1bDsux7PsByHNs7yWFYJ0fKchQrNpThFCwbD0dQdE9U4bgEXRyVac4bBLSDPi+NBW0vRI5lkLhfnhdD+RRQVnBafAdDddENRLVU9DtT0LDaXQDBLAQLG6YU6MZRjBwSWZkgWfhxyyK0n14hAqPwNV8T9KthQ9OUAk1LNqnUb0aTKZS9VU5iNJQvgeV0yceOnBBxJULMVyAs46jMFdPXJVwBOs6wbCqQTaXCN4dQjb5XPUpIPLQ7yMN8woKxuWp1F6Uxnki6xM36QxwJLQSdFDZL6TShimMyuZ434RMuOtZ8K0CwjjAEYJsXqUxIqqARfUsKLBJlAYVGc9K2pmLLOqWPQH241NWkzHRwvqDURU1CxIpVLMXHTBVvGOsJkuIcgIDgBRmrAHr9L8gBaKbBhFdM-Wueo-2aOc8zdYwK38PMNEPJrUs+OJphY3y9Mw-9As8TxuglBLy09cCpvRfRyhLV1sUakZw3oqMWWNdl3rRr1CLcTVqSCFdauIuU8zaR1fHJ6xWnLZToLPODL2vJC3ty7bn3JdMHX++pLBlao1zlPxMyVfF-A1GxfCW1q1NW1gGfyq59gCR1yNVTcg3Vppod9GHLCrCx1H8O6QiAA */
+      /** @xstate-layout N4IgpgJg5mDOIC5QDUwAsCWBjANmAdAPIB2AMgPbFQAiYAhhAEoCuxAxALZyx0wDaABgC6iUAAdysDABcMlUSAAeiAGwB2AIz4ATGu0qAnAIAcK4wFZtAFg0AaEAE9EVgwGZ8BleYFvzVywbmAL5B9qiYuAQkFFS0DCzsXLA8-BoiSCASUrLyGcoIXtr4Gmp+asauBlZWAubG9k4IdcbFbhoqrgICrq7G2q4hYejYeERklDT0TKyc3LxgfNrp4pIycsQK+Wqexf3qXZ57ag2Iaipariq1Na7mt3UGgyDhI1HEAMpgAE4AbthgAClyMwvsQwA5Zsl5oJlplVjkNnlEO0NFoVNpAq5NOYNF0VCcEIE1PhLH0BNoMXUKVYni9ImNPr9-kCQWCIUkUgs0gosmtcqB8hocS0KSpDF5cdpjGorATccYrPh-OY9BVRcYFbThvSSIy-lhAcDQeDIZzFrDeQjNsjLMTAgYKjUZcYjPVHMj9EUBGKNPcrBq-DTQs9taNdd99YbWSaOdDXBb4etrQgUe5UQI1AIXPpPCY5VYOrtPDjvJ0TGotRFRgAhMAAM3IXzAADEMF9YNJaGI6F9pCCwABBOvSb4xSbxGax-jCHmJ-lKZEaF1K8o1fxYiwagk2Az4LOkvRWKWuAsqSuvfC1htN1vtztgbu9-tDkdfMdxaaJOapBPZJNIlMSgEfBelRAxtG9LEanxd0misdx-XOPx2msJdjHPekr0bFs2w7Lsez7JsX1HCYPwSU1oSWWc-3nQUsyKYsMXabZ1FlWC9BUJUNCsVd+j0bjgmDOkww+NBG3vCd2FkLgvhhai+URAVkWlEljDQswzGqaoDAJPxOMCIVtCFb0UIGITQzed4xN7MjJ2-BYZwyS1-yUlMVEVMVhXadytJ6AkDHApUfFMTp9nMAKMJEqzxNsr8oR-eSrQA3F3Eza4jzU7ZzD8OUTBaNRygMTMzkuYrIss6yJM-Cj+Copy50UhdCXcXROk0f03FKX05QxTiTNMeDrBVO5yoZSrYpqhZ40SlymrcDw9DcdcHSXbp8wLfBMw0bRvHMK4yvMqsKpiqZyKnBYrF-BTk284oC06XFwPTcw5Xc8wQJCmxtOMWpRqwm9cPvR9CMHYdvmimzTrs+KHKupLXL296vA1fwIJ8VwhVerodBlCkUR4+U-vrbDbzwh8COfMGvghqqzvsvhuXqmjGvye0STUW5LgMdpsu2uUVXcQIsx8dRAn6QShiOy9iYBu98KfIiqZpibzvNGbaMQTxd1C8LPFRoyYMaEpvHwMwNE8E9-A1E8ievHC5fJhXQdfZWobis1pqZ67kuuJUVSPbwUs8uVAne71spPbZrhxEJg2IcgIDgBRhLAdWWcQABaYCAoCvRajey5-blE8SSuKpttuXQUtG6JSLdtPkx4vcunJbZ4L0k8CVcCDTfaAsOe5k86hrj4I2ZI02QbgCqmJUxUV6DGip47R-JqfBpVxc2+j6c3tFtknAflkHiLfOvJKn1yZ-X848YpHwpTYxopXer6xQ6bv0T8EfXfPr34aanEvcuiZkqIZI8rgCRnC0DieCWJahYlAvvWWZNgaUxduNeuf9Zr5HgruPiR48RDzFHKNS+VuJdF6HcdyPhY5BCAA */
       context: {
         previousServiceJourneyState: undefined,
         currentServiceJourneyState: undefined,
@@ -502,7 +514,7 @@ export const createActor = (
                 },
               },
               {
-                target: "BeforeFirstDeparture",
+                target: "BeforeFirstDepartureAfterLongDeadRun",
                 actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
@@ -564,12 +576,12 @@ export const createActor = (
             "The vehicle is signed onto a service journey. We trust it is the right service journey.",
         },
 
-        BeforeFirstDeparture: {
+        BeforeFirstDepartureAfterLongDeadRun: {
           on: {
             message: [
               {
                 target: "OnLongDeadRun",
-                actions: { type: "ackLater" },
+                actions: [{ type: "ackLater" }, xstate.assign(removeCurrent)],
                 guard: {
                   type: "isDeadRun",
                 },
@@ -589,13 +601,13 @@ export const createActor = (
                 },
               },
               {
-                target: "BeforeFirstDeparture",
+                target: "BeforeFirstDepartureAfterLongDeadRun",
                 actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
           },
           description:
-            "Before the first departure of the first service journey after a long dead run. Ultimately this state exists because if we receive a dead run message in this state, that dead run message should not be acknowledged immediately.",
+            "Before the first departure of the first service journey after a long dead run. At this point the driver might have selected a wrong service journey.",
         },
 
         OnShortDeadRun: {
@@ -661,7 +673,7 @@ export const createActor = (
                 },
               },
               {
-                target: "OnServiceJourney",
+                target: "BeforeFirstDepartureAfterShortDeadRun",
                 actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
               },
             ],
@@ -674,6 +686,54 @@ export const createActor = (
           },
           description:
             "The vehicle has not been on this dead run for long. It might be a mistake in the HFP implementation. It might be a break between two service journeys. It might be the start of a long dead run.",
+        },
+
+        BeforeFirstDepartureAfterShortDeadRun: {
+          description:
+            "Before the first departure of a new service journey after a short dead run. At this point the driver might have selected a wrong service journey.",
+
+          on: {
+            message: [
+              {
+                target: "OnShortDeadRun",
+                actions: [{ type: "ackLater" }, xstate.assign(removeCurrent)],
+                guard: "isDeadRun",
+              },
+              {
+                target: "OnServiceJourney",
+                actions: [
+                  { type: "ackLater" },
+                  xstate.assign(setCurrent),
+                  {
+                    type: "sendApcForCurrent",
+                  },
+                  xstate.assign(advanceCurrentStop),
+                ],
+                guard: {
+                  type: "notIsPreviousDefinedAndIsDeparture",
+                },
+              },
+              {
+                target: "OnServiceJourney",
+                actions: [
+                  { type: "ackLater" },
+                  xstate.assign(setCurrent),
+                  {
+                    type: "sendApcSplitBetweenServiceJourneys",
+                  },
+                  xstate.assign(advanceCurrentStop),
+                  xstate.assign(removePrevious),
+                ],
+                guard: {
+                  type: "isPreviousDefinedAndIsDeparture",
+                },
+              },
+              {
+                target: "BeforeFirstDepartureAfterShortDeadRun",
+                actions: [{ type: "ackLater" }, xstate.assign(setCurrent)],
+              },
+            ],
+          },
         },
       },
     });

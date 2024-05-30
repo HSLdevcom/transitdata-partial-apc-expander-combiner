@@ -1,0 +1,72 @@
+[
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0012/01124",
+      "payload": {
+        "desi": "631",
+        "dir": "1",
+        "oper": 12,
+        "veh": 1124,
+        "tst": 1716447177,
+        "tsi": 1716447177,
+        "lat": 60.346516,
+        "long": 25.057388,
+        "odo": 13657,
+        "oday": "2024-05-23",
+        "jrn": 85,
+        "line": 662,
+        "start": "09:12",
+        "loc": "GPS",
+        "stop": 4810216,
+        "route": "4631",
+        "vehicleCounts": {
+          "vehicleLoad": 0,
+          "vehicleLoadRatio": 0,
+          "doorCounts": [
+            { "door": "1", "count": [{ "clazz": "adult", "in": 0, "out": 1 }] },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 0, "out": 2 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] }
+          ],
+          "countQuality": "regular"
+        }
+      }
+    },
+    "eventTimestamp": 1716447182481
+  },
+  {
+    "data": {
+      "SchemaVersion": 1,
+      "topic": "/hfp/v2/journey/ongoing/apc/bus/0012/01124",
+      "payload": {
+        "desi": "631",
+        "dir": "2",
+        "oper": 12,
+        "veh": 1124,
+        "tst": 1716447177,
+        "tsi": 1716447177,
+        "lat": 60.346516,
+        "long": 25.057388,
+        "odo": 5,
+        "oday": "2024-05-23",
+        "jrn": 1230,
+        "line": 662,
+        "start": "09:53",
+        "loc": "ODO",
+        "stop": 4810216,
+        "route": "4631",
+        "vehicleCounts": {
+          "vehicleLoad": 5,
+          "vehicleLoadRatio": 0.07462687,
+          "doorCounts": [
+            { "door": "1", "count": [{ "clazz": "adult", "in": 5, "out": 0 }] },
+            { "door": "2", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] },
+            { "door": "3", "count": [{ "clazz": "adult", "in": 0, "out": 0 }] }
+          ],
+          "countQuality": "regular"
+        }
+      }
+    },
+    "eventTimestamp": 1716447182481
+  }
+]

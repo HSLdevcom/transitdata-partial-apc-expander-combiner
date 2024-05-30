@@ -28,7 +28,7 @@ export const mockMessageId = (serialMessageId: number): Pulsar.MessageId => {
   });
 };
 
-const mockPulsarMessage = ({
+export const mockPulsarMessage = ({
   buffer,
   eventTimestamp,
   properties,
