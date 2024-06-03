@@ -52,10 +52,12 @@ cat <<EOF
 
 EOF
 
-docker-compose \
-	--file ./docker-compose-other-services.yml \
-	--file ./docker-compose-this-service.yml \
-	down &&
+# The postgres image is picky about permissions.
+chmod go+r ./config/vehicle-db/* &&
+	docker-compose \
+		--file ./docker-compose-other-services.yml \
+		--file ./docker-compose-this-service.yml \
+		down &&
 	docker-compose \
 		--file ./docker-compose-other-services.yml \
 		--file ./docker-compose-this-service.yml \
