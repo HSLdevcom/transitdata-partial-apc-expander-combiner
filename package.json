@@ -45,7 +45,7 @@
     "@tsconfig/node-lts": "^20.1.1",
     "@tsconfig/strictest": "^2.0.2",
     "@types/jest": "^29.5.11",
-    "@types/node": "^20.10.4",
+    "@types/node": "^20.14.2",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
     "@typescript-eslint/parser": "^7.1.1",
     "0x": "^5.7.0",
