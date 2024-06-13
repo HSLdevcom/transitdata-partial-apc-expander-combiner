@@ -127,11 +127,11 @@ export const getVehicleJourneyId = (
 };
 
 export const getStops = (
-  logger: pino.Logger,
-  hfpData: hfp.IData,
+  //logger: pino.Logger,
+  //hfpData: hfp.IData,
   hfpDataTopic: hfp.ITopic,
   hfpDataPayload: hfp.IPayload,
-  vehicleJourney: VehicleJourneyId,
+  //vehicleJourney: VehicleJourneyId,
 ): Partial<StopState> => {
   const { nextStop } = hfpDataTopic;
   const { stop } = hfpDataPayload;
