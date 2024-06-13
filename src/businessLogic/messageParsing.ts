@@ -220,11 +220,11 @@ export const parseHfpPulsarMessage = (
     return undefined;
   }
   const stops = getStops(
-    logger,
-    hfpData,
+    //logger,
+    //hfpData,
     topic,
     hfpData.payload,
-    vehicleJourneyId,
+    //vehicleJourneyId,
   );
   return {
     messageId,
