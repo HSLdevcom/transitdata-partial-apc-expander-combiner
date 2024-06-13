@@ -135,12 +135,15 @@ export const getStops = (
 ): Partial<StopState> => {
   const { nextStop } = hfpDataTopic;
   const { stop } = hfpDataPayload;
+  /*
+  THIS PRODUCES VERY MUCH LOGGING IN PRODUCTION, MORE THAN 500 IN A MINUTE
   if (vehicleJourney !== hfp.Topic.JourneyType.deadrun && nextStop == null) {
     logger.info(
       { hfpData },
       "HFP message topic is missing next stop even when journeyType is journey. Continuing anyway.",
     );
   }
+   */
   return {
     ...(stop != null && { currentStop: stop.toString() }),
     ...(nextStop != null && { nextStop }),
