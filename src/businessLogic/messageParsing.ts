@@ -127,23 +127,20 @@ export const getVehicleJourneyId = (
 };
 
 export const getStops = (
-  //logger: pino.Logger,
-  //hfpData: hfp.IData,
+  logger: pino.Logger,
+  hfpData: hfp.IData,
   hfpDataTopic: hfp.ITopic,
   hfpDataPayload: hfp.IPayload,
-  //vehicleJourney: VehicleJourneyId,
+  vehicleJourney: VehicleJourneyId,
 ): Partial<StopState> => {
   const { nextStop } = hfpDataTopic;
   const { stop } = hfpDataPayload;
-  /*
-  THIS PRODUCES VERY MUCH LOGGING IN PRODUCTION, MORE THAN 500 IN A MINUTE
   if (vehicleJourney !== hfp.Topic.JourneyType.deadrun && nextStop == null) {
-    logger.info(
+    logger.debug(
       { hfpData },
       "HFP message topic is missing next stop even when journeyType is journey. Continuing anyway.",
     );
   }
-   */
   return {
     ...(stop != null && { currentStop: stop.toString() }),
     ...(nextStop != null && { nextStop }),
@@ -220,11 +217,11 @@ export const parseHfpPulsarMessage = (
     return undefined;
   }
   const stops = getStops(
-    //logger,
-    //hfpData,
+    logger,
+    hfpData,
     topic,
     hfpData.payload,
-    //vehicleJourneyId,
+    vehicleJourneyId,
   );
   return {
     messageId,
