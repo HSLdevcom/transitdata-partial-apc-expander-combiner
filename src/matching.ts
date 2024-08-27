@@ -45,6 +45,8 @@ const transformLocToString = (
       return "MAN";
     case hfp.Payload.LocationQualityMethod.NA:
       return "N/A";
+    case hfp.Payload.LocationQualityMethod.DR:
+      return "DR";
     default: {
       const exhaustiveCheck: never = locV2;
       throw new Error(String(exhaustiveCheck));
