@@ -5,7 +5,6 @@ name: "CI/CD: Continuous integration and continuous deployment"
   push:
     branches:
       - main
-      - hotfix/**
     tags:
       - "v*"
   pull_request:
