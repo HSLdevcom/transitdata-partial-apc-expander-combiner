@@ -52,6 +52,10 @@ updates:
         patterns:
           - "protobufjs"
           - "protobufjs-cli"
+      testcontainers:
+        patterns:
+          - "@testcontainers/*"
+          - "testcontainers"
       tsconfig:
         patterns:
           - "@tsconfig/*"
