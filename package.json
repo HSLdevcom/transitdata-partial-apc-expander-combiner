@@ -41,7 +41,7 @@
   "homepage": "https://github.com/HSLdevcom/transitdata-partial-apc-expander-combiner#readme",
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@testcontainers/postgresql": "^10.2.2",
+    "@testcontainers/postgresql": "^11.0.0",
     "@tsconfig/node-lts": "^20.1.1",
     "@tsconfig/strictest": "^2.0.2",
     "@types/jest": "^29.5.11",
