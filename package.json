@@ -21,8 +21,8 @@
     "start:with-docker-compose": "node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
     "start:with-docker-compose-inspect": "node --env-file ./docker-compose/docker-compose-complement.env --inspect dist/index.js",
     "start:with-docker-compose-flamegraph": "0x -o -- node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
-    "test": "jest",
-    "test:no-testcontainer-tests": "jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\"",
+    "test": "jest --coverage",
+    "test:no-testcontainer-tests": "jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage",
     "ts:check": "tsc --noEmit"
   },
   "repository": {
