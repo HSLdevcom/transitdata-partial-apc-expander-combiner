@@ -44,7 +44,7 @@ const keepFeedingInboxQueueMessages = async (
       // let's not await here. Any errors will cause crashing and on restart we
       // might handle the same unusable message again. That is fine.
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      consumer.acknowledgeId(pulsarMessage.getMessageId());
+      consumer.acknowledge(pulsarMessage);
     }
     if (nMessagesExpected !== undefined) {
       messageCount += 1;
