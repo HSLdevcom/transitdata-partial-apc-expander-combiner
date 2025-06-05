@@ -86,6 +86,10 @@
       "/node_modules/",
       "/dist/"
     ],
+    "coveragePathIgnorePatterns": [
+      "/src/protobuf/",
+      "/src/quicktype/"
+    ],
     "transform": {
       "^.+\\.(ts|tsx)$": [
         "ts-jest",
