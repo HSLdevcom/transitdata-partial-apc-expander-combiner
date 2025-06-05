@@ -68,12 +68,12 @@
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "@types/pg": "^8.10.9",
+    "@types/pg": "^8.15.4",
     "async-mutex": "^0.5.0",
     "dotenv": "^16.5.0",
     "heap-js": "^2.6.0",
-    "pg": "^8.11.1",
-    "pg-promise": "^11.5.4",
+    "pg": "^8.16.0",
+    "pg-promise": "^11.14.0",
     "pino": "^9.7.0",
     "protobufjs": "^7.0.0",
     "pulsar-client": "^1.13.2",
