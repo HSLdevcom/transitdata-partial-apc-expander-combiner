@@ -21,8 +21,8 @@
     "start:with-docker-compose": "node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
     "start:with-docker-compose-inspect": "node --env-file ./docker-compose/docker-compose-complement.env --inspect dist/index.js",
     "start:with-docker-compose-flamegraph": "0x -o -- node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
-    "test": "jest --coverage",
-    "test:no-testcontainer-tests": "jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage",
+    "test": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --coverage --reporters=jest-junit",
+    "test:no-testcontainer-tests": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage --reporters=jest-junit",
     "ts:check": "tsc --noEmit"
   },
   "repository": {
