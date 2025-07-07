@@ -76,7 +76,7 @@
     "pg-promise": "^11.14.0",
     "pino": "^9.7.0",
     "protobufjs": "^7.5.3",
-    "pulsar-client": "^1.13.2",
+    "pulsar-client": "^1.14.0",
     "xstate": "^5.19.4"
   },
   "jest": {
