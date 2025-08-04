@@ -131,3 +131,5 @@ dist
 
 .idea/
 transitdata-partial-apc-expander-combiner.iml
+
+junit.xml
