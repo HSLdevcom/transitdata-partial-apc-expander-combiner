@@ -138,12 +138,13 @@ export const passengerCount = ($root.passengerCount = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Data.decode = function decode(reader, length) {
+    Data.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.passengerCount.Data();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.SchemaVersion = reader.int32();
@@ -615,12 +616,13 @@ export const passengerCount = ($root.passengerCount = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Payload.decode = function decode(reader, length) {
+    Payload.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.passengerCount.Payload();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.desi = reader.string();
@@ -1143,12 +1145,13 @@ export const passengerCount = ($root.passengerCount = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    VehicleCounts.decode = function decode(reader, length) {
+    VehicleCounts.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.passengerCount.VehicleCounts();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.countQuality = reader.string();
@@ -1451,12 +1454,13 @@ export const passengerCount = ($root.passengerCount = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    DoorCount.decode = function decode(reader, length) {
+    DoorCount.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.passengerCount.DoorCount();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.door = reader.string();
@@ -1702,12 +1706,13 @@ export const passengerCount = ($root.passengerCount = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Count.decode = function decode(reader, length) {
+    Count.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.passengerCount.Count();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.clazz = reader.string();

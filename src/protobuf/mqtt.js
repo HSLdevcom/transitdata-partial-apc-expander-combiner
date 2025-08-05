@@ -123,12 +123,13 @@ export const mqtt = ($root.mqtt = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    RawMessage.decode = function decode(reader, length) {
+    RawMessage.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.mqtt.RawMessage();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.SchemaVersion = reader.int32();

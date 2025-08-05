@@ -125,12 +125,13 @@ export const hfp = ($root.hfp = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Data.decode = function decode(reader, length) {
+    Data.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.hfp.Data();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.SchemaVersion = reader.int32();
@@ -588,12 +589,13 @@ export const hfp = ($root.hfp = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Topic.decode = function decode(reader, length) {
+    Topic.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.hfp.Topic();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.SchemaVersion = reader.int32();
@@ -1895,12 +1897,13 @@ export const hfp = ($root.hfp = (() => {
      * @throws {Error} If the payload is not a reader or valid buffer
      * @throws {$protobuf.util.ProtocolError} If required fields are missing
      */
-    Payload.decode = function decode(reader, length) {
+    Payload.decode = function decode(reader, length, error) {
       if (!(reader instanceof $Reader)) reader = $Reader.create(reader);
       let end = length === undefined ? reader.len : reader.pos + length,
         message = new $root.hfp.Payload();
       while (reader.pos < end) {
         let tag = reader.uint32();
+        if (tag === error) break;
         switch (tag >>> 3) {
           case 1: {
             message.SchemaVersion = reader.int32();
