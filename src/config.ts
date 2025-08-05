@@ -64,7 +64,7 @@ const getOptionalFiniteNonNegativeFloatWithDefault = (
   return result;
 };
 
-const createPulsarLog =
+export const createPulsarLog =
   (logger: pino.Logger) =>
   (
     level: Pulsar.LogLevel,
@@ -271,12 +271,10 @@ const getProcessingConfig = async (): Promise<ProcessingConfig> => {
   };
 };
 
-const getConfig = async (logger: pino.Logger): Promise<Config> => ({
+export const getConfig = async (logger: pino.Logger): Promise<Config> => ({
   database: getDatabaseConfig(),
   vehicleTypes: getVehicleTypeConfig(),
   processing: await getProcessingConfig(),
   pulsar: getPulsarConfig(logger),
   healthCheck: getHealthCheckConfig(),
 });
-
-export default getConfig;

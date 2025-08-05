@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import assert from "node:assert";
 import pino from "pino";
 import keepProcessingMessages from "./businessLogic/messageProcessing";
-import getConfig from "./config";
+import { getConfig } from "./config";
 import {
   createPulsarClient,
   createPulsarConsumer,
