@@ -129,7 +129,14 @@ dist
 .yarn/install-state.gz
 .pnp.*
 
+# IntelliJ IDEA
 .idea/
 transitdata-partial-apc-expander-combiner.iml
 
+# Created for Codecov
+codecov
+codecov.SHA256SUM
+codecov.SHA256SUM.sig
+
+# Created by jest-junit for Codecov
 junit.xml
