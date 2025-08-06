@@ -78,7 +78,7 @@
     "pino": "^9.7.0",
     "protobufjs": "^7.5.3",
     "pulsar-client": "^1.14.0",
-    "xstate": "^5.19.4"
+    "xstate": "^5.20.1"
   },
   "jest": {
     "preset": "ts-jest/presets/js-with-ts",
