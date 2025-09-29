@@ -42,8 +42,8 @@
   "devDependencies": {
     "@jest/globals": "^29.7.0",
     "@testcontainers/postgresql": "^10.2.2",
-    "@tsconfig/node-lts": "^22.0.1",
-    "@tsconfig/strictest": "^2.0.2",
+    "@tsconfig/node-lts": "^22.0.2",
+    "@tsconfig/strictest": "^2.0.6",
     "@types/jest": "^29.5.11",
     "@types/node": "^22.15.30",
     "@typescript-eslint/eslint-plugin": "^7.1.1",
