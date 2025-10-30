@@ -17,7 +17,6 @@ env:
 
 jobs:
   build-check-test-push:
-    name: Build, check, test, push
     uses: HSLdevcom/transitdata-shared-workflows/.github/workflows/ci-cd-typescript.yml@main
     secrets:
       DOCKER_USERNAME: ${{ secrets.TRANSITDATA_DOCKERHUB_USER }}
