@@ -5,7 +5,7 @@
  * the higher-level loops when all test data has been handled.
  */
 
-import type { pino } from "pino";
+import type pino from "pino";
 import { Queue, createQueue } from "../dataStructures/queue";
 import type {
   HfpEndConditionFunctions,
