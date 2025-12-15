@@ -61,12 +61,18 @@ const createVehicleModels = async (
   dir: string,
   db: pgPromise.IDatabase<unknown>,
 ): Promise<void> => {
-  const tableName = "equipment";
+  const schemaName = "jore";
+  const rawTableName = "equipment";
+  const table = new db.$config.pgp.helpers.TableName({
+    table: rawTableName,
+    schema: schemaName,
+  });
   const tableInput = JSON.parse(
     fs.readFileSync(path.join(dir, "transitlogDbEquipment.json"), "utf8"),
   ) as Record<string, string | null>[];
   const createTableQuery = `
-      CREATE TABLE ${tableName} (
+      CREATE SCHEMA ${schemaName};
+      CREATE TABLE ${schemaName}.${rawTableName} (
         vehicle_id TEXT NOT NULL,
         operator_id TEXT NOT NULL,
         type TEXT
@@ -76,7 +82,7 @@ const createVehicleModels = async (
   const insertQuery = db.$config.pgp.helpers.insert(
     tableInput,
     ["operator_id", "vehicle_id", "type"],
-    tableName,
+    table,
   );
   await db.none(insertQuery);
 };

@@ -1,7 +1,9 @@
-CREATE TABLE equipment (
+CREATE SCHEMA jore;
+
+CREATE TABLE jore.equipment (
   vehicle_id TEXT NOT NULL,
   operator_id TEXT NOT NULL,
   type TEXT
 );
 
-\copy equipment FROM '/transitlogDbEquipment.csv' CSV;
+\copy jore.equipment FROM '/transitlogDbEquipment.csv' CSV;
