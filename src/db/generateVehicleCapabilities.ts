@@ -21,7 +21,7 @@ const getEquipmentFromDatabase = async (
 ): Promise<EquipmentFromDatabase[]> => {
   const db = createDb(databaseConfig.connectionString);
   const result: EquipmentFromDatabase[] = await db.many(
-    "SELECT vehicle_id, operator_id, type FROM equipment",
+    "SELECT vehicle_id, operator_id, type FROM jore.equipment",
   );
   // Close the database connection after use.
   await db.$pool.end();
