@@ -26,4 +26,3 @@ jobs:
     with:
       checkAndTestOutsideDocker: true
       checkAndTestInsideDocker: true
-
