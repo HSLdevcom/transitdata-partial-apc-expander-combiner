@@ -26,6 +26,4 @@ jobs:
     with:
       checkAndTestOutsideDocker: true
       checkAndTestInsideDocker: true
-      workingDirectory: .
-      runTestsInsideDocker: true
 
