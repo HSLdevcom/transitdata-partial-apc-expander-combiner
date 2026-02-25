@@ -18,11 +18,8 @@ env:
 jobs:
   build-check-test-push:
     name: Build, check, test, push
-    uses: HSLdevcom/transitdata-shared-workflows/.github/workflows/ci-cd-typescript.yml@feature/59649-measure-test-coverage
-    secrets:
-      DOCKER_USERNAME: ${{ secrets.TRANSITDATA_DOCKERHUB_USER }}
-      DOCKER_PASSWORD: ${{ secrets.TRANSITDATA_DOCKERHUB_TOKEN }}
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    uses: HSLdevcom/transitdata-shared-workflows/.github/workflows/ci-cd-typescript.yml@1.0.5
+    secrets: inherit
     with:
       checkAndTestOutsideDocker: true
       checkAndTestInsideDocker: true
