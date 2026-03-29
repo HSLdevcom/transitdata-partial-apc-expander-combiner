@@ -65,7 +65,7 @@
     "quicktype": "^23.2.6",
     "testcontainers": "^10.2.2",
     "ts-jest": "^29.1.1",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "@types/pg": "^8.15.4",
