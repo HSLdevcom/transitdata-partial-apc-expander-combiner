@@ -121,11 +121,11 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
   const pulsarImage = "apachepulsar/pulsar:latest";
   const pulsarPortNumber = 6650;
-  let pulsarContainer: testcontainers.StartedTestContainer;
-  let pulsarClient: Pulsar.Client;
-  let partialApcProducer: Pulsar.Producer;
-  let hfpProducer: Pulsar.Producer;
-  let apcReader: Pulsar.Reader;
+  let pulsarContainer: testcontainers.StartedTestContainer | undefined;
+  let pulsarClient: Pulsar.Client | undefined;
+  let partialApcProducer: Pulsar.Producer | undefined;
+  let hfpProducer: Pulsar.Producer | undefined;
+  let apcReader: Pulsar.Reader | undefined;
 
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> =>
