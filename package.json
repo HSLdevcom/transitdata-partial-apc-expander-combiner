@@ -21,8 +21,10 @@
     "start:with-docker-compose": "node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
     "start:with-docker-compose-inspect": "node --env-file ./docker-compose/docker-compose-complement.env --inspect dist/index.js",
     "start:with-docker-compose-flamegraph": "0x -o -- node --env-file ./docker-compose/docker-compose-complement.env dist/index.js",
-    "test": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --coverage --reporters=jest-junit --forceExit",
-    "test:no-testcontainer-tests": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage --reporters=jest-junit --forceExit",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage --reporters=jest-junit",
+    "test:integration": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --testPathPattern=\"main.integration.test.ts\" --coverage --reporters=jest-junit --forceExit",
+    "test:no-testcontainer-tests": "JEST_JUNIT_CLASSNAME=\"{filepath}\" jest --testPathIgnorePatterns=\"./dist|main.integration.test.ts\" --coverage --reporters=jest-junit",
     "ts:check": "tsc --noEmit"
   },
   "repository": {

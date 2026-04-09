@@ -199,13 +199,13 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   afterEach(async () => {
-    await partialApcProducer.flush();
-    await partialApcProducer.close();
-    await hfpProducer.flush();
-    await hfpProducer.close();
-    await apcReader.close();
-    await pulsarClient.close();
-    await pulsarContainer.stop();
+    await partialApcProducer?.flush();
+    await partialApcProducer?.close();
+    await hfpProducer?.flush();
+    await hfpProducer?.close();
+    await apcReader?.close();
+    await pulsarClient?.close();
+    await pulsarContainer?.stop();
   });
 
   afterAll(async () => {
