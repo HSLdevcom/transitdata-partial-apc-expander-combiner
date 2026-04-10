@@ -18,7 +18,7 @@ env:
 jobs:
   build-check-test-push:
     name: Build, check, test, push
-    uses: HSLdevcom/transitdata-shared-workflows/.github/workflows/ci-cd-typescript.yml@1.0.5
+    uses: HSLdevcom/transitdata-shared-workflows/.github/workflows/ci-cd-typescript.yml@main
     secrets: inherit
     with:
       checkAndTestOutsideDocker: true
