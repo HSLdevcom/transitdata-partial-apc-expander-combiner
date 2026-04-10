@@ -130,15 +130,29 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> =>
       new testcontainers.GenericContainer(pulsarImage)
-        .withExposedPorts(pulsarPortNumber)
+        .withExposedPorts({ container: pulsarPortNumber, host: pulsarPortNumber })
         .withCommand(["bin/pulsar", "standalone"])
+        .withEnvironment({
+          // Pulsar defaults to advertising the container hostname, which is
+          // unreachable from outside the container on Linux CI environments
+          // (e.g. GitHub Actions). Setting this to "localhost" ensures the
+          // topic lookup response returns an address the client can connect to.
+          PULSAR_PREFIX_advertisedAddress: "localhost",
+        })
         .withHealthCheck({
           test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"],
-          interval: 500,
-          timeout: 60_000,
-          retries: 120,
+          interval: 2_000,
+          timeout: 10_000,
+          retries: 150,
+          startPeriod: 10_000,
         })
-        .withWaitStrategy(testcontainers.Wait.forHealthCheck())
+        .withWaitStrategy(
+          testcontainers.Wait.forAll([
+            testcontainers.Wait.forHealthCheck(),
+            testcontainers.Wait.forListeningPorts(),
+          ]),
+        )
+        .withStartupTimeout(300_000)
         .start();
 
   const createPulsarTopics = async (): Promise<void> => {
