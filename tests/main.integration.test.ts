@@ -172,60 +172,6 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     pgp.end();
   });
 
-  // eslint-disable-next-line no-console
-  const log = (msg: string) => console.log(`[beforeEach] ${msg}`);
-
-  beforeEach(async () => {
-    try {
-      log("starting Pulsar container");
-      pulsarContainer = await createPulsarContainer();
-      log("Pulsar container started");
-
-      log("creating Pulsar topics");
-      await createPulsarTopics();
-      log("Pulsar topics created");
-
-      const pulsarHost = pulsarContainer.getHost();
-      const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
-      const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
-      log(`creating Pulsar client at ${serviceUrl}`);
-      pulsarClient = new Pulsar.Client({ serviceUrl });
-      log("Pulsar client created");
-
-      log("creating partialApc producer");
-      partialApcProducer = await pulsarClient.createProducer({
-        topic: partialApcTopic,
-      });
-      log("partialApc producer created");
-
-      log("creating hfp producer");
-      hfpProducer = await pulsarClient.createProducer({
-        topic: hfpTopic,
-      });
-      log("hfp producer created");
-
-      log("creating apc reader");
-      apcReader = await pulsarClient.createReader({
-        topic: apcTopic,
-        startMessageId: Pulsar.MessageId.earliest(),
-      });
-      log("apc reader created");
-
-      setEnvironmentVariables({
-        serviceUrl,
-        partialApcTopic,
-        hfpTopic,
-        apcTopic,
-        postgresConnectionUri,
-      });
-      log("environment variables set — beforeEach complete");
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.error("[beforeEach] failed:", err);
-      throw err;
-    }
-  });
-
   afterEach(async () => {
     await partialApcProducer.flush();
     await partialApcProducer.close();
