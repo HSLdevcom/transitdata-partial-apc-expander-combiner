@@ -256,11 +256,13 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   afterEach(async () => {
+    // Only flush — do not close. Closing all producers drops the underlying
+    // TCP connection; the next test's createProducer then triggers a fresh
+    // connection + topic lookup and fails with ConnectError on Linux CI.
+    // pulsarClient.close() in afterAll closes all producers and readers that
+    // were created via this client, so no resources are leaked.
     await partialApcProducer?.flush();
-    await partialApcProducer?.close();
     await hfpProducer?.flush();
-    await hfpProducer?.close();
-    await apcReader?.close();
     partialApcProducer = undefined;
     hfpProducer = undefined;
     apcReader = undefined;
