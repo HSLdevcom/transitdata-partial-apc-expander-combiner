@@ -130,7 +130,10 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> =>
       new testcontainers.GenericContainer(pulsarImage)
-        .withExposedPorts({ container: pulsarPortNumber, host: pulsarPortNumber })
+        .withExposedPorts({
+          container: pulsarPortNumber,
+          host: pulsarPortNumber,
+        })
         .withCommand(["bin/pulsar", "standalone"])
         .withEnvironment({
           // Pulsar defaults to advertising the container hostname, which is
