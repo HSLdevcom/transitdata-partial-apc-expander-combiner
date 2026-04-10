@@ -198,6 +198,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         postgresConnectionUri,
       });
     } catch (err) {
+      // eslint-disable-next-line no-console
       console.error("beforeEach failed:", err);
       throw err;
     }
