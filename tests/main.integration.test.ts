@@ -111,74 +111,131 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
   const testDataDir = "./tests/testData";
 
-  const partialApcTopic = "persistent://public/default/partial-apc";
-  const hfpTopic = "persistent://public/default/hfp";
-  const apcTopic = "persistent://public/default/expanded-apc";
-
-  let postgresContainer: postgresql.StartedPostgreSqlContainer;
-  let db: pgPromise.IDatabase<unknown>;
-  let postgresConnectionUri: string;
-
   const pulsarImage = "apachepulsar/pulsar:latest";
   const pulsarPortNumber = 6650;
-  let pulsarContainer: testcontainers.StartedTestContainer;
-  let pulsarClient: Pulsar.Client;
-  let partialApcProducer: Pulsar.Producer;
-  let hfpProducer: Pulsar.Producer;
-  let apcReader: Pulsar.Reader;
+
+  let postgresContainer: postgresql.StartedPostgreSqlContainer;
+  let postgresConnectionUri: string;
+
+  // Pulsar container and client are shared across all tests in this suite.
+  // Starting a new container per test caused ConnectError on CI: the Pulsar
+  // C++ client lazily connects on the first createProducer call and the topic
+  // lookup response contains the broker's advertised address. Without
+  // PULSAR_PREFIX_advertisedAddress the broker advertises its container
+  // hostname (unreachable from outside on Linux), causing ConnectError.
+  // With a fixed port mapping (6650:6650) and advertisedAddress=localhost the
+  // lookup returns pulsar://localhost:6650, which matches the mapped port.
+  // A single shared container avoids port-already-allocated conflicts between
+  // sequential tests that would occur if each test bound the same fixed port.
+  let pulsarContainer: testcontainers.StartedTestContainer | undefined;
+  let pulsarClient: Pulsar.Client | undefined;
+  let serviceUrl: string;
+
+  // Producers, reader, and topic names are unique per test for isolation on
+  // the shared broker.
+  let testIndex = 0;
+  let partialApcTopic: string;
+  let hfpTopic: string;
+  let apcTopic: string;
+  let partialApcProducer: Pulsar.Producer | undefined;
+  let hfpProducer: Pulsar.Producer | undefined;
+  let apcReader: Pulsar.Reader | undefined;
 
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> =>
       new testcontainers.GenericContainer(pulsarImage)
-        .withExposedPorts(pulsarPortNumber)
+        // Fixed port mapping so that the broker lookup response
+        // (pulsar://localhost:6650) matches the host-accessible port.
+        .withExposedPorts({
+          container: pulsarPortNumber,
+          host: pulsarPortNumber,
+        })
         .withCommand(["bin/pulsar", "standalone"])
+        .withEnvironment({
+          // Pulsar defaults to advertising the container hostname, which is
+          // unreachable from outside on Linux CI (e.g. GitHub Actions).
+          // Setting this to "localhost" ensures topic lookup returns an
+          // address the client can actually connect to.
+          PULSAR_PREFIX_advertisedAddress: "localhost",
+        })
         .withHealthCheck({
           test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"],
-          interval: 500,
-          timeout: 60_000,
-          retries: 120,
+          interval: 2_000,
+          timeout: 10_000,
+          retries: 150,
+          startPeriod: 10_000,
         })
-        .withWaitStrategy(testcontainers.Wait.forHealthCheck())
+        .withWaitStrategy(
+          testcontainers.Wait.forAll([
+            testcontainers.Wait.forHealthCheck(),
+            testcontainers.Wait.forListeningPorts(),
+          ]),
+        )
+        .withStartupTimeout(300_000)
         .start();
 
-  const createPulsarTopics = async (): Promise<void> => {
+  const createPulsarTopics = async (
+    container: testcontainers.StartedTestContainer,
+    partialApcTopicName: string,
+    hfpTopicName: string,
+    apcTopicName: string,
+  ): Promise<void> => {
     await Promise.all([
-      pulsarContainer.exec([
+      container.exec([
         "bin/pulsar-admin",
         "topics",
         "create",
-        partialApcTopic,
+        partialApcTopicName,
       ]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", hfpTopic]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", apcTopic]),
+      container.exec(["bin/pulsar-admin", "topics", "create", hfpTopicName]),
+      container.exec(["bin/pulsar-admin", "topics", "create", apcTopicName]),
     ]);
   };
 
   beforeAll(async () => {
-    // The database is only read by the individual tests so we do not need to
-    // recreate it for every test.
-    postgresContainer = await new postgresql.PostgreSqlContainer().start();
-    postgresConnectionUri = postgresContainer.getConnectionUri();
-    const pgp = pgPromise();
-    db = pgp(postgresConnectionUri);
+    // PostgreSQL — only read by tests, no need to recreate per test.
     // FIXME: Instead, write the vehicle models into the database for each test
     // case in beforeEach to enable changing the capacity of the same bus over
     // time also in these tests. Same mechanism, just copy a small extract of
     // transitlogDbEquipment.json into each test case directory.
+    postgresContainer = await new postgresql.PostgreSqlContainer().start();
+    postgresConnectionUri = postgresContainer.getConnectionUri();
+    const pgp = pgPromise();
+    const db = pgp(postgresConnectionUri);
     await createVehicleModels(testDataDir, db);
-    // Close the DB connection.
     await db.$pool.end();
-    // Just in case pgp.end does any more deconstruction, run it.
     pgp.end();
+
+    // Pulsar — started once for the whole suite; unique topics per test
+    // provide isolation without the overhead and port-conflict risk of
+    // per-test containers.
+    pulsarContainer = await createPulsarContainer();
+    const pulsarHost = pulsarContainer.getHost();
+    const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
+    serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
+    pulsarClient = new Pulsar.Client({ serviceUrl });
   });
 
   beforeEach(async () => {
-    pulsarContainer = await createPulsarContainer();
-    await createPulsarTopics();
-    const pulsarHost = pulsarContainer.getHost();
-    const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
-    const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
-    pulsarClient = new Pulsar.Client({ serviceUrl });
+    if (pulsarContainer == null || pulsarClient == null) {
+      throw new Error(
+        "Pulsar container or client not initialized — beforeAll failed",
+      );
+    }
+
+    // Generate unique topic names so messages from one test do not bleed into
+    // another on the shared broker.
+    partialApcTopic = `persistent://public/default/partial-apc-${String(testIndex)}`;
+    hfpTopic = `persistent://public/default/hfp-${String(testIndex)}`;
+    apcTopic = `persistent://public/default/expanded-apc-${String(testIndex)}`;
+    testIndex += 1;
+
+    await createPulsarTopics(
+      pulsarContainer,
+      partialApcTopic,
+      hfpTopic,
+      apcTopic,
+    );
     partialApcProducer = await pulsarClient.createProducer({
       topic: partialApcTopic,
     });
@@ -199,16 +256,21 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   afterEach(async () => {
-    await partialApcProducer.flush();
-    await partialApcProducer.close();
-    await hfpProducer.flush();
-    await hfpProducer.close();
-    await apcReader.close();
-    await pulsarClient.close();
-    await pulsarContainer.stop();
+    // Only flush — do not close. Closing all producers drops the underlying
+    // TCP connection; the next test's createProducer then triggers a fresh
+    // connection + topic lookup and fails with ConnectError on Linux CI.
+    // pulsarClient.close() in afterAll closes all producers and readers that
+    // were created via this client, so no resources are leaked.
+    await partialApcProducer?.flush();
+    await hfpProducer?.flush();
+    partialApcProducer = undefined;
+    hfpProducer = undefined;
+    apcReader = undefined;
   });
 
   afterAll(async () => {
+    await pulsarClient?.close();
+    await pulsarContainer?.stop();
     await postgresContainer.stop();
   });
 
@@ -229,12 +291,12 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // eslint-disable-next-line no-restricted-syntax
     for (const msg of parsedPartialApcData) {
       // eslint-disable-next-line no-await-in-loop
-      await partialApcProducer.send(msg);
+      await partialApcProducer?.send(msg);
     }
     // eslint-disable-next-line no-restricted-syntax
     for (const msg of parsedHfpData) {
       // eslint-disable-next-line no-await-in-loop
-      await hfpProducer.send(msg);
+      await hfpProducer?.send(msg);
     }
   };
 
@@ -257,7 +319,10 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // eslint-disable-next-line no-restricted-syntax
     for (const expected of expectedApcData) {
       // eslint-disable-next-line no-await-in-loop
-      const message = await apcReader.readNext();
+      const message = await apcReader?.readNext();
+      if (message == null) {
+        throw new Error("apcReader returned no message");
+      }
       const decoded: ApcTestData = {
         data: decodeWithoutDefaults(passengerCount.Data, message.getData()),
         eventTimestamp: message.getEventTimestamp(),
@@ -266,7 +331,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       expect(decoded.data).toStrictEqual(expected.data);
       expect(decoded.eventTimestamp).toStrictEqual(expected.eventTimestamp);
     }
-    expect(apcReader.hasNext()).toBeFalsy();
+    expect(apcReader?.hasNext()).toBeFalsy();
   };
 
   const runSingleDataTest = async ({
