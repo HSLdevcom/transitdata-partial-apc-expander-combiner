@@ -218,9 +218,9 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
     // Generate unique topic names so messages from one test do not bleed into
     // another on the shared broker.
-    partialApcTopic = `persistent://public/default/partial-apc-${testIndex}`;
-    hfpTopic = `persistent://public/default/hfp-${testIndex}`;
-    apcTopic = `persistent://public/default/expanded-apc-${testIndex}`;
+    partialApcTopic = `persistent://public/default/partial-apc-${String(testIndex)}`;
+    hfpTopic = `persistent://public/default/hfp-${String(testIndex)}`;
+    apcTopic = `persistent://public/default/expanded-apc-${String(testIndex)}`;
     testIndex += 1;
 
     await createPulsarTopics(
