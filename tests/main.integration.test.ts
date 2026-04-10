@@ -173,29 +173,34 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   beforeEach(async () => {
-    pulsarContainer = await createPulsarContainer();
-    await createPulsarTopics();
-    const pulsarHost = pulsarContainer.getHost();
-    const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
-    const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
-    pulsarClient = new Pulsar.Client({ serviceUrl });
-    partialApcProducer = await pulsarClient.createProducer({
-      topic: partialApcTopic,
-    });
-    hfpProducer = await pulsarClient.createProducer({
-      topic: hfpTopic,
-    });
-    apcReader = await pulsarClient.createReader({
-      topic: apcTopic,
-      startMessageId: Pulsar.MessageId.earliest(),
-    });
-    setEnvironmentVariables({
-      serviceUrl,
-      partialApcTopic,
-      hfpTopic,
-      apcTopic,
-      postgresConnectionUri,
-    });
+    try {
+      pulsarContainer = await createPulsarContainer();
+      await createPulsarTopics();
+      const pulsarHost = pulsarContainer.getHost();
+      const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
+      const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
+      pulsarClient = new Pulsar.Client({ serviceUrl });
+      partialApcProducer = await pulsarClient.createProducer({
+        topic: partialApcTopic,
+      });
+      hfpProducer = await pulsarClient.createProducer({
+        topic: hfpTopic,
+      });
+      apcReader = await pulsarClient.createReader({
+        topic: apcTopic,
+        startMessageId: Pulsar.MessageId.earliest(),
+      });
+      setEnvironmentVariables({
+        serviceUrl,
+        partialApcTopic,
+        hfpTopic,
+        apcTopic,
+        postgresConnectionUri,
+      });
+    } catch (err) {
+      console.error("beforeEach failed:", err);
+      throw err;
+    }
   });
 
   afterEach(async () => {
