@@ -121,7 +121,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
   const pulsarImage = "apachepulsar/pulsar:latest";
   const pulsarPortNumber = 6650;
-  let pulsarContainer: testcontainers.StartedTestContainer;
+  let pulsarContainer: testcontainers.StartedTestContainer | undefined;
   let pulsarClient: Pulsar.Client;
   let partialApcProducer: Pulsar.Producer;
   let hfpProducer: Pulsar.Producer;
@@ -130,10 +130,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> =>
       new testcontainers.GenericContainer(pulsarImage)
-        .withExposedPorts({
-          container: pulsarPortNumber,
-          host: pulsarPortNumber,
-        })
+        .withExposedPorts(pulsarPortNumber)
         .withCommand(["bin/pulsar", "standalone"])
         .withEnvironment({
           // Pulsar defaults to advertising the container hostname, which is
@@ -222,13 +219,16 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   afterEach(async () => {
-    await partialApcProducer.flush();
-    await partialApcProducer.close();
-    await hfpProducer.flush();
-    await hfpProducer.close();
-    await apcReader.close();
-    await pulsarClient.close();
-    await pulsarContainer.stop();
+    try {
+      await partialApcProducer.flush();
+      await partialApcProducer.close();
+      await hfpProducer.flush();
+      await hfpProducer.close();
+      await apcReader.close();
+      await pulsarClient.close();
+    } finally {
+      await pulsarContainer?.stop();
+    }
   });
 
   afterAll(async () => {
