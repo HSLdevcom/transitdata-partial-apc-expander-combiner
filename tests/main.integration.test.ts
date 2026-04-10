@@ -155,16 +155,13 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         .withStartupTimeout(300_000)
         .start();
 
-  const createPulsarTopics = async (): Promise<void> => {
+  const createPulsarTopics = async (
+    container: testcontainers.StartedTestContainer,
+  ): Promise<void> => {
     await Promise.all([
-      pulsarContainer.exec([
-        "bin/pulsar-admin",
-        "topics",
-        "create",
-        partialApcTopic,
-      ]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", hfpTopic]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", apcTopic]),
+      container.exec(["bin/pulsar-admin", "topics", "create", partialApcTopic]),
+      container.exec(["bin/pulsar-admin", "topics", "create", hfpTopic]),
+      container.exec(["bin/pulsar-admin", "topics", "create", apcTopic]),
     ]);
   };
 
@@ -189,7 +186,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   beforeEach(async () => {
     try {
       pulsarContainer = await createPulsarContainer();
-      await createPulsarTopics();
+      await createPulsarTopics(pulsarContainer);
       const pulsarHost = pulsarContainer.getHost();
       const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
       const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
