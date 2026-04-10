@@ -172,8 +172,8 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     pgp.end();
   });
 
-  // eslint-disable-next-line no-console
   const log = (msg: string) => {
+    // eslint-disable-next-line no-console
     console.log(`[beforeEach] ${msg}`);
   };
 
