@@ -29,7 +29,7 @@ const initializeVehicleContext = async (
   outboxQueue: Queue<MessageCollection>,
   backlogDrainingWaitPromise: Promise<void>,
   isTestRun: boolean,
-  hfpEndConditionFuncs?: HfpEndConditionFunctions | undefined,
+  hfpEndConditionFuncs?: HfpEndConditionFunctions,
 ): Promise<VehicleContext> => {
   const partialApcQueue = createQueue<PartialApcInboxQueueMessage>();
   const hfpQueue = createQueue<HfpInboxQueueMessage>();

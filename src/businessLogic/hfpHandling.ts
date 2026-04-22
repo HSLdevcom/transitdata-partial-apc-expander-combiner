@@ -16,8 +16,8 @@ import type {
 const createHfpHandler = (
   config: ProcessingConfig,
   hfpQueue: Queue<HfpInboxQueueMessage>,
-  hfpEndConditionFuncs?: HfpEndConditionFunctions | undefined,
-  apcFuncs?: ApcHandlingFunctions | undefined,
+  hfpEndConditionFuncs?: HfpEndConditionFunctions,
+  apcFuncs?: ApcHandlingFunctions,
 ): HfpHandlingFunctions => {
   const { reportHfpRead, isMoreHfpExpected } = hfpEndConditionFuncs ?? {};
 
