@@ -35,6 +35,12 @@ module.exports = {
     // Renamed to only-throw-error in @typescript-eslint v8
     "@typescript-eslint/no-throw-literal": "off",
     "@typescript-eslint/only-throw-error": "error",
+    // @typescript-eslint v8 removed allowNumber from strict-type-checked default;
+    // restore it to match v7 behaviour and avoid noisy .toString() calls.
+    "@typescript-eslint/restrict-template-expressions": [
+      "error",
+      { allowNumber: true },
+    ],
   },
   settings: {
     "import/parsers": {
