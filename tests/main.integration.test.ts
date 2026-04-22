@@ -157,12 +157,15 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
             retries: 150,
           })
           .withStartupTimeout(360_000)
-          // Wait for both the admin health check AND the binary protocol port
-          // so that pulsarClient.createProducer() does not get a ConnectError.
+          // Wait for health check, binary protocol port, AND Pulsar's own log
+          // line confirming the binary protocol service is accepting connections.
+          // Port 6650 can be in LISTEN state before the Pulsar handshake layer
+          // is ready, causing ConnectError on the first createProducer call.
           .withWaitStrategy(
             testcontainers.Wait.forAll([
               testcontainers.Wait.forHealthCheck(),
               testcontainers.Wait.forListeningPorts(),
+              testcontainers.Wait.forLogMessage(/messaging service is ready/),
             ]),
           )
           .withLogConsumer((stream) => {
@@ -271,18 +274,44 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     }
     await createPulsarTopics(container, partialApcTopic, hfpTopic, apcTopic);
     console.log(`[beforeEach] Pulsar topics created.`);
-    // Create a fresh client per test to avoid stale connections.
-    pulsarClient = new Pulsar.Client({ serviceUrl: pulsarServiceUrl });
-    partialApcProducer = await pulsarClient.createProducer({
-      topic: partialApcTopic,
-    });
-    hfpProducer = await pulsarClient.createProducer({
-      topic: hfpTopic,
-    });
-    apcReader = await pulsarClient.createReader({
-      topic: apcTopic,
-      startMessageId: Pulsar.MessageId.earliest(),
-    });
+    // Create a fresh client per test to avoid stale connections. Retry a few
+    // times in case the binary protocol is not yet fully accepting connections.
+    const maxProducerAttempts = 5;
+    for (let attempt = 1; attempt <= maxProducerAttempts; attempt += 1) {
+      try {
+        pulsarClient = new Pulsar.Client({ serviceUrl: pulsarServiceUrl });
+        // eslint-disable-next-line no-await-in-loop
+        partialApcProducer = await pulsarClient.createProducer({
+          topic: partialApcTopic,
+        });
+        // eslint-disable-next-line no-await-in-loop
+        hfpProducer = await pulsarClient.createProducer({
+          topic: hfpTopic,
+        });
+        // eslint-disable-next-line no-await-in-loop
+        apcReader = await pulsarClient.createReader({
+          topic: apcTopic,
+          startMessageId: Pulsar.MessageId.earliest(),
+        });
+        break;
+      } catch (err) {
+        console.warn(
+          `[beforeEach] Pulsar client init failed (attempt ${attempt}/${maxProducerAttempts}): ${String(err)}`,
+        );
+        if (pulsarClient != null) {
+          // eslint-disable-next-line no-await-in-loop
+          await pulsarClient.close().catch(() => {});
+          pulsarClient = undefined;
+        }
+        if (attempt >= maxProducerAttempts) {
+          throw err;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 5_000);
+        });
+      }
+    }
     setEnvironmentVariables({
       serviceUrl: pulsarServiceUrl,
       partialApcTopic,
@@ -316,14 +345,14 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     if (apcReader != null) {
       await apcReader.close();
     }
+    if (pulsarClient != null) {
+      await pulsarClient.close();
+    }
     console.log(`[afterEach] Teardown complete.`);
   });
 
   afterAll(async () => {
     // Guard against beforeAll having partially failed.
-    if (pulsarClient != null) {
-      await pulsarClient.close();
-    }
     if (pulsarContainer != null) {
       await pulsarContainer.stop();
       console.log(`[afterAll] Pulsar container stopped.`);
