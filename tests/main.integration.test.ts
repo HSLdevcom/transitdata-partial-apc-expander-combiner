@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import * as postgresql from "@testcontainers/postgresql";
 import fs from "fs";
 import path from "path";
@@ -126,10 +127,12 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   let partialApcProducer: Pulsar.Producer;
   let hfpProducer: Pulsar.Producer;
   let apcReader: Pulsar.Reader;
+  let pulsarLogs: string[] = [];
 
   const createPulsarContainer =
-    (): Promise<testcontainers.StartedTestContainer> =>
-      new testcontainers.GenericContainer(pulsarImage)
+    (): Promise<testcontainers.StartedTestContainer> => {
+      pulsarLogs = [];
+      return new testcontainers.GenericContainer(pulsarImage)
         .withExposedPorts(pulsarPortNumber)
         .withCommand(["bin/pulsar", "standalone"])
         .withHealthCheck({
@@ -140,7 +143,13 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         })
         .withStartupTimeout(210_000)
         .withWaitStrategy(testcontainers.Wait.forHealthCheck())
+        .withLogConsumer((stream) => {
+          stream.on("data", (chunk: Buffer) => {
+            pulsarLogs.push(chunk.toString().trimEnd());
+          });
+        })
         .start();
+    };
 
   const createPulsarTopics = async (): Promise<void> => {
     await Promise.all([
@@ -158,9 +167,18 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   beforeAll(async () => {
     // The database is only read by the individual tests so we do not need to
     // recreate it for every test.
+    console.log(
+      `[beforeAll] Starting PostgreSQL container (image: postgres:16-alpine)...`,
+    );
+    const pgStartTime = Date.now();
     postgresContainer = await new postgresql.PostgreSqlContainer(
       "postgres:16-alpine",
     ).start();
+    console.log(
+      `[beforeAll] PostgreSQL container ready in ${Date.now() - pgStartTime}ms` +
+        ` (id: ${postgresContainer.getId()},` +
+        ` uri: ${postgresContainer.getConnectionUri()})`,
+    );
     postgresConnectionUri = postgresContainer.getConnectionUri();
     const pgp = pgPromise();
     db = pgp(postgresConnectionUri);
@@ -169,6 +187,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // time also in these tests. Same mechanism, just copy a small extract of
     // transitlogDbEquipment.json into each test case directory.
     await createVehicleModels(testDataDir, db);
+    console.log(`[beforeAll] Vehicle models loaded. Setup complete.`);
     // Close the DB connection.
     await db.$pool.end();
     // Just in case pgp.end does any more deconstruction, run it.
@@ -176,11 +195,37 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   beforeEach(async () => {
-    pulsarContainer = await createPulsarContainer();
+    console.log(
+      `\n[beforeEach] Starting Pulsar container (image: ${pulsarImage})...`,
+    );
+    const pulsarStartTime = Date.now();
+    try {
+      pulsarContainer = await createPulsarContainer();
+    } catch (err) {
+      const elapsed = Date.now() - pulsarStartTime;
+      console.error(
+        `[beforeEach] Pulsar container failed to start after ${elapsed}ms`,
+      );
+      if (pulsarLogs.length > 0) {
+        console.error(
+          `[beforeEach] Pulsar container logs (${pulsarLogs.length} lines):`,
+        );
+        pulsarLogs.forEach((line) => {
+          console.error(`  [PULSAR] ${line}`);
+        });
+      }
+      throw err;
+    }
+    console.log(
+      `[beforeEach] Pulsar container ready in ${Date.now() - pulsarStartTime}ms` +
+        ` (id: ${pulsarContainer.getId()})`,
+    );
     await createPulsarTopics();
+    console.log(`[beforeEach] Pulsar topics created.`);
     const pulsarHost = pulsarContainer.getHost();
     const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
     const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
+    console.log(`[beforeEach] Pulsar service URL: ${serviceUrl}`);
     pulsarClient = new Pulsar.Client({ serviceUrl });
     partialApcProducer = await pulsarClient.createProducer({
       topic: partialApcTopic,
@@ -199,9 +244,20 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       apcTopic,
       postgresConnectionUri,
     });
+    console.log(`[beforeEach] Setup complete.`);
   });
 
   afterEach(async () => {
+    const recentPulsarLogs = pulsarLogs.slice(-50);
+    if (recentPulsarLogs.length > 0) {
+      console.log(
+        `[afterEach] Last ${recentPulsarLogs.length} Pulsar container log lines:`,
+      );
+      recentPulsarLogs.forEach((line) => {
+        console.log(`  [PULSAR] ${line}`);
+      });
+    }
+    console.log(`[afterEach] Flushing and closing Pulsar producers/reader...`);
     await partialApcProducer.flush();
     await partialApcProducer.close();
     await hfpProducer.flush();
@@ -209,6 +265,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     await apcReader.close();
     await pulsarClient.close();
     await pulsarContainer.stop();
+    console.log(`[afterEach] Pulsar container stopped.`);
   });
 
   afterAll(async () => {
@@ -219,6 +276,10 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     parsedPartialApcData: Pulsar.ProducerMessage[],
     parsedHfpData: Pulsar.ProducerMessage[],
   ): Promise<void> => {
+    console.log(
+      `[feedPulsar] Sending ${parsedPartialApcData.length} partial-APC` +
+        ` and ${parsedHfpData.length} HFP messages...`,
+    );
     // FIXME: As there seems to be a bug in pulsar-client-node implementation of
     // BlockIfQueueFull, let's do this the slow and hard way.
 
@@ -239,6 +300,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       // eslint-disable-next-line no-await-in-loop
       await hfpProducer.send(msg);
     }
+    console.log(`[feedPulsar] All messages sent.`);
   };
 
   const runMain = async (endCondition: EndCondition): Promise<void> => {
@@ -257,19 +319,37 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   };
 
   const collectAndCheckResults = async (expectedApcData: ApcTestData[]) => {
+    console.log(
+      `[collectAndCheckResults] Expecting ${expectedApcData.length} APC message(s)...`,
+    );
+    let receivedCount = 0;
     // eslint-disable-next-line no-restricted-syntax
     for (const expected of expectedApcData) {
       // eslint-disable-next-line no-await-in-loop
       const message = await apcReader.readNext();
+      receivedCount += 1;
       const decoded: ApcTestData = {
         data: decodeWithoutDefaults(passengerCount.Data, message.getData()),
         eventTimestamp: message.getEventTimestamp(),
       };
+      console.log(
+        `[collectAndCheckResults] Received message ${receivedCount}/${expectedApcData.length}` +
+          ` (eventTimestamp: ${decoded.eventTimestamp})`,
+      );
       checkAndRemoveVehicleLoadRatios(decoded, expected);
       expect(decoded.data).toStrictEqual(expected.data);
       expect(decoded.eventTimestamp).toStrictEqual(expected.eventTimestamp);
     }
-    expect(apcReader.hasNext()).toBeFalsy();
+    const hasNext = apcReader.hasNext();
+    if (hasNext) {
+      console.error(
+        `[collectAndCheckResults] Reader still has messages after reading all ${expectedApcData.length} expected — unexpected extra message(s) present`,
+      );
+    }
+    expect(hasNext).toBeFalsy();
+    console.log(
+      `[collectAndCheckResults] All ${expectedApcData.length} message(s) matched.`,
+    );
   };
 
   const runSingleDataTest = async ({
@@ -316,3 +396,4 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
 
   createTestsFromSubdirectories(testDataDir);
 });
+/* eslint-enable no-console */
