@@ -157,15 +157,16 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
             retries: 150,
           })
           .withStartupTimeout(360_000)
-          // Wait for health check, binary protocol port, AND Pulsar's own log
-          // line confirming the binary protocol service is accepting connections.
+          // Wait for the admin health check AND the binary protocol port.
           // Port 6650 can be in LISTEN state before the Pulsar handshake layer
-          // is ready, causing ConnectError on the first createProducer call.
+          // is fully ready, so beforeEach retries createProducer on ConnectError.
+          // Avoid Wait.forLogMessage: 'apachepulsar/pulsar:latest' may emit
+          // different log wording across versions, making it unreliable on CI
+          // where the image is always pulled fresh.
           .withWaitStrategy(
             testcontainers.Wait.forAll([
               testcontainers.Wait.forHealthCheck(),
               testcontainers.Wait.forListeningPorts(),
-              testcontainers.Wait.forLogMessage(/messaging service is ready/),
             ]),
           )
           .withLogConsumer((stream) => {
