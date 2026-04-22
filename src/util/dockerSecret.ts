@@ -18,9 +18,7 @@ const SECRET_DIR = "/run/secrets";
 // and a straightforward copy of the original.
 export type Secrets = Record<string, string>;
 
-export const getSecrets = <T extends Secrets = Secrets>(
-  secretDir?: string,
-): T => {
+export const getSecrets = (secretDir?: string): Secrets => {
   const dir = secretDir ?? SECRET_DIR;
 
   const secrets: Secrets = {};
@@ -36,5 +34,5 @@ export const getSecrets = <T extends Secrets = Secrets>(
     });
   }
 
-  return secrets as T;
+  return secrets;
 };

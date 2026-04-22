@@ -1,6 +1,6 @@
 import deepEqual from "../../src/util/deepEqual";
 
-const hasConsecutiveRepetitions = <T>(array: T[]): boolean =>
+const hasConsecutiveRepetitions = (array: unknown[]): boolean =>
   array.some(
     (item, index) =>
       index < array.length - 1 && deepEqual(item, array[index + 1]),
