@@ -134,10 +134,11 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         .withCommand(["bin/pulsar", "standalone"])
         .withHealthCheck({
           test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"],
-          interval: 500,
-          timeout: 60_000,
-          retries: 120,
+          interval: 2_000,
+          timeout: 30_000,
+          retries: 90,
         })
+        .withStartupTimeout(210_000)
         .withWaitStrategy(testcontainers.Wait.forHealthCheck())
         .start();
 
