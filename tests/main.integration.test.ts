@@ -107,60 +107,88 @@ const createVehicleModels = async (
  * bash script in <projectRoot>/scripts/collect-mqtt-data.template.sh .
  */
 describe("Test using realistic, anonymized data dump extracts and testcontainers", () => {
-  const singleTestTimeoutInMilliseconds = 240_000;
+  // Pulsar container startup can take 3-5 minutes. The global timeout covers
+  // beforeAll (PostgreSQL + Pulsar startup) and each individual test.
+  const singleTestTimeoutInMilliseconds = 600_000;
   jest.setTimeout(singleTestTimeoutInMilliseconds);
 
   const testDataDir = "./tests/testData";
 
-  const partialApcTopic = "persistent://public/default/partial-apc";
-  const hfpTopic = "persistent://public/default/hfp";
-  const apcTopic = "persistent://public/default/expanded-apc";
-
-  let postgresContainer: postgresql.StartedPostgreSqlContainer;
+  let postgresContainer: postgresql.StartedPostgreSqlContainer | undefined;
   let db: pgPromise.IDatabase<unknown>;
   let postgresConnectionUri: string;
 
   const pulsarImage = "apachepulsar/pulsar:latest";
   const pulsarPortNumber = 6650;
-  let pulsarContainer: testcontainers.StartedTestContainer;
-  let pulsarClient: Pulsar.Client;
-  let partialApcProducer: Pulsar.Producer;
-  let hfpProducer: Pulsar.Producer;
-  let apcReader: Pulsar.Reader;
+  // Pulsar container is shared across all tests to avoid the 3-5 minute
+  // startup overhead on each test. The client is created per-test so each
+  // test gets a fresh connection to the broker.
+  let pulsarContainer: testcontainers.StartedTestContainer | undefined;
+  let pulsarServiceUrl: string;
   let pulsarLogs: string[] = [];
+
+  // Per-test Pulsar resources (created in beforeEach, torn down in afterEach)
+  let partialApcTopic: string;
+  let hfpTopic: string;
+  let apcTopic: string;
+  let pulsarClient: Pulsar.Client | undefined;
+  let partialApcProducer: Pulsar.Producer | undefined;
+  let hfpProducer: Pulsar.Producer | undefined;
+  let apcReader: Pulsar.Reader | undefined;
+  // Index into pulsarLogs at the start of each test, to slice per-test logs
+  let pulsarLogsTestStart = 0;
+  let testCounter = 0;
 
   const createPulsarContainer =
     (): Promise<testcontainers.StartedTestContainer> => {
       pulsarLogs = [];
-      return new testcontainers.GenericContainer(pulsarImage)
-        .withExposedPorts(pulsarPortNumber)
-        .withCommand(["bin/pulsar", "standalone"])
-        .withHealthCheck({
-          test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"],
-          interval: 2_000,
-          timeout: 30_000,
-          retries: 90,
-        })
-        .withStartupTimeout(210_000)
-        .withWaitStrategy(testcontainers.Wait.forHealthCheck())
-        .withLogConsumer((stream) => {
-          stream.on("data", (chunk: Buffer) => {
-            pulsarLogs.push(chunk.toString().trimEnd());
-          });
-        })
-        .start();
+      return (
+        new testcontainers.GenericContainer(pulsarImage)
+          .withExposedPorts(pulsarPortNumber)
+          .withCommand(["bin/pulsar", "standalone"])
+          // Reduce heap from the default 2g to avoid OOM on CI/dev machines.
+          .withEnvironment({
+            PULSAR_MEM: "-Xms256m -Xmx512m -XX:MaxDirectMemorySize=512m",
+          })
+          .withHealthCheck({
+            test: ["CMD-SHELL", "bin/pulsar-admin brokers healthcheck"],
+            interval: 2_000,
+            timeout: 30_000,
+            retries: 150,
+          })
+          .withStartupTimeout(360_000)
+          // Wait for both the admin health check AND the binary protocol port
+          // so that pulsarClient.createProducer() does not get a ConnectError.
+          .withWaitStrategy(
+            testcontainers.Wait.forAll([
+              testcontainers.Wait.forHealthCheck(),
+              testcontainers.Wait.forListeningPorts(),
+            ]),
+          )
+          .withLogConsumer((stream) => {
+            stream.on("data", (chunk: Buffer) => {
+              pulsarLogs.push(chunk.toString().trimEnd());
+            });
+          })
+          .start()
+      );
     };
 
-  const createPulsarTopics = async (): Promise<void> => {
+  const createPulsarTopics = async (
+    container: testcontainers.StartedTestContainer,
+    partialApcTopicName: string,
+    hfpTopicName: string,
+    apcTopicName: string,
+  ): Promise<void> => {
     await Promise.all([
-      pulsarContainer.exec([
+      container.exec([
         "bin/pulsar-admin",
         "topics",
         "create",
-        partialApcTopic,
+        partialApcTopicName,
       ]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", hfpTopic]),
-      pulsarContainer.exec(["bin/pulsar-admin", "topics", "create", apcTopic]),
+      container.exec(["bin/pulsar-admin", "topics", "create", hfpTopicName]),
+      container.exec(["bin/pulsar-admin", "topics", "create", apcTopicName]),
     ]);
   };
 
@@ -187,16 +215,16 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // time also in these tests. Same mechanism, just copy a small extract of
     // transitlogDbEquipment.json into each test case directory.
     await createVehicleModels(testDataDir, db);
-    console.log(`[beforeAll] Vehicle models loaded. Setup complete.`);
+    console.log(`[beforeAll] Vehicle models loaded.`);
     // Close the DB connection.
     await db.$pool.end();
     // Just in case pgp.end does any more deconstruction, run it.
     pgp.end();
-  });
 
-  beforeEach(async () => {
+    // Start Pulsar once for the entire test suite; each test gets its own
+    // unique topic names to maintain isolation.
     console.log(
-      `\n[beforeEach] Starting Pulsar container (image: ${pulsarImage})...`,
+      `[beforeAll] Starting Pulsar container (image: ${pulsarImage})...`,
     );
     const pulsarStartTime = Date.now();
     try {
@@ -204,11 +232,11 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     } catch (err) {
       const elapsed = Date.now() - pulsarStartTime;
       console.error(
-        `[beforeEach] Pulsar container failed to start after ${elapsed}ms`,
+        `[beforeAll] Pulsar container failed to start after ${elapsed}ms`,
       );
       if (pulsarLogs.length > 0) {
         console.error(
-          `[beforeEach] Pulsar container logs (${pulsarLogs.length} lines):`,
+          `[beforeAll] Pulsar container logs (${pulsarLogs.length} lines):`,
         );
         pulsarLogs.forEach((line) => {
           console.error(`  [PULSAR] ${line}`);
@@ -217,16 +245,34 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       throw err;
     }
     console.log(
-      `[beforeEach] Pulsar container ready in ${Date.now() - pulsarStartTime}ms` +
+      `[beforeAll] Pulsar container ready in ${Date.now() - pulsarStartTime}ms` +
         ` (id: ${pulsarContainer.getId()})`,
     );
-    await createPulsarTopics();
-    console.log(`[beforeEach] Pulsar topics created.`);
     const pulsarHost = pulsarContainer.getHost();
     const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
-    const serviceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
-    console.log(`[beforeEach] Pulsar service URL: ${serviceUrl}`);
-    pulsarClient = new Pulsar.Client({ serviceUrl });
+    pulsarServiceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
+    console.log(`[beforeAll] Pulsar service URL: ${pulsarServiceUrl}`);
+    console.log(`[beforeAll] Setup complete.`);
+  });
+
+  beforeEach(async () => {
+    testCounter += 1;
+    pulsarLogsTestStart = pulsarLogs.length;
+    partialApcTopic = `persistent://public/default/partial-apc-${testCounter}`;
+    hfpTopic = `persistent://public/default/hfp-${testCounter}`;
+    apcTopic = `persistent://public/default/expanded-apc-${testCounter}`;
+    console.log(
+      `\n[beforeEach] Creating Pulsar topics for test ${testCounter}...`,
+    );
+    // Narrow from | undefined: beforeAll guarantees pulsarContainer is set
+    const container = pulsarContainer;
+    if (container == null) {
+      throw new Error("Pulsar not initialized — beforeAll must have failed");
+    }
+    await createPulsarTopics(container, partialApcTopic, hfpTopic, apcTopic);
+    console.log(`[beforeEach] Pulsar topics created.`);
+    // Create a fresh client per test to avoid stale connections.
+    pulsarClient = new Pulsar.Client({ serviceUrl: pulsarServiceUrl });
     partialApcProducer = await pulsarClient.createProducer({
       topic: partialApcTopic,
     });
@@ -238,7 +284,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       startMessageId: Pulsar.MessageId.earliest(),
     });
     setEnvironmentVariables({
-      serviceUrl,
+      serviceUrl: pulsarServiceUrl,
       partialApcTopic,
       hfpTopic,
       apcTopic,
@@ -248,28 +294,44 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   });
 
   afterEach(async () => {
-    const recentPulsarLogs = pulsarLogs.slice(-50);
-    if (recentPulsarLogs.length > 0) {
+    const testPulsarLogs = pulsarLogs.slice(pulsarLogsTestStart);
+    if (testPulsarLogs.length > 0) {
       console.log(
-        `[afterEach] Last ${recentPulsarLogs.length} Pulsar container log lines:`,
+        `[afterEach] Pulsar container logs during test (${testPulsarLogs.length} lines):`,
       );
-      recentPulsarLogs.forEach((line) => {
+      testPulsarLogs.slice(-50).forEach((line) => {
         console.log(`  [PULSAR] ${line}`);
       });
     }
     console.log(`[afterEach] Flushing and closing Pulsar producers/reader...`);
-    await partialApcProducer.flush();
-    await partialApcProducer.close();
-    await hfpProducer.flush();
-    await hfpProducer.close();
-    await apcReader.close();
-    await pulsarClient.close();
-    await pulsarContainer.stop();
-    console.log(`[afterEach] Pulsar container stopped.`);
+    // Guard against beforeEach not having run (e.g. because beforeAll failed).
+    if (partialApcProducer != null) {
+      await partialApcProducer.flush();
+      await partialApcProducer.close();
+    }
+    if (hfpProducer != null) {
+      await hfpProducer.flush();
+      await hfpProducer.close();
+    }
+    if (apcReader != null) {
+      await apcReader.close();
+    }
+    console.log(`[afterEach] Teardown complete.`);
   });
 
   afterAll(async () => {
-    await postgresContainer.stop();
+    // Guard against beforeAll having partially failed.
+    if (pulsarClient != null) {
+      await pulsarClient.close();
+    }
+    if (pulsarContainer != null) {
+      await pulsarContainer.stop();
+      console.log(`[afterAll] Pulsar container stopped.`);
+    }
+    if (postgresContainer != null) {
+      await postgresContainer.stop();
+      console.log(`[afterAll] PostgreSQL container stopped.`);
+    }
   });
 
   const feedPulsar = async (
@@ -290,15 +352,23 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // const sendingPromises = [...partialApcPromises, ...hfpPromises];
     // await Promise.all(sendingPromises);
 
+    // Narrow from | undefined: beforeEach guarantees these are set if we reach here
+    const apcProducer = partialApcProducer;
+    const hfpProd = hfpProducer;
+    if (apcProducer == null || hfpProd == null) {
+      throw new Error(
+        "Producers not initialized — beforeEach must have failed",
+      );
+    }
     // eslint-disable-next-line no-restricted-syntax
     for (const msg of parsedPartialApcData) {
       // eslint-disable-next-line no-await-in-loop
-      await partialApcProducer.send(msg);
+      await apcProducer.send(msg);
     }
     // eslint-disable-next-line no-restricted-syntax
     for (const msg of parsedHfpData) {
       // eslint-disable-next-line no-await-in-loop
-      await hfpProducer.send(msg);
+      await hfpProd.send(msg);
     }
     console.log(`[feedPulsar] All messages sent.`);
   };
@@ -319,6 +389,13 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   };
 
   const collectAndCheckResults = async (expectedApcData: ApcTestData[]) => {
+    // Narrow from | undefined: beforeEach guarantees apcReader is set if we reach here
+    const reader = apcReader;
+    if (reader == null) {
+      throw new Error(
+        "apcReader not initialized — beforeEach must have failed",
+      );
+    }
     console.log(
       `[collectAndCheckResults] Expecting ${expectedApcData.length} APC message(s)...`,
     );
@@ -326,7 +403,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     // eslint-disable-next-line no-restricted-syntax
     for (const expected of expectedApcData) {
       // eslint-disable-next-line no-await-in-loop
-      const message = await apcReader.readNext();
+      const message = await reader.readNext();
       receivedCount += 1;
       const decoded: ApcTestData = {
         data: decodeWithoutDefaults(passengerCount.Data, message.getData()),
@@ -340,7 +417,7 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       expect(decoded.data).toStrictEqual(expected.data);
       expect(decoded.eventTimestamp).toStrictEqual(expected.eventTimestamp);
     }
-    const hasNext = apcReader.hasNext();
+    const hasNext = reader.hasNext();
     if (hasNext) {
       console.error(
         `[collectAndCheckResults] Reader still has messages after reading all ${expectedApcData.length} expected — unexpected extra message(s) present`,
