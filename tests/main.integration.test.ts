@@ -157,7 +157,9 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   beforeAll(async () => {
     // The database is only read by the individual tests so we do not need to
     // recreate it for every test.
-    postgresContainer = await new postgresql.PostgreSqlContainer().start();
+    postgresContainer = await new postgresql.PostgreSqlContainer(
+      "postgres:16-alpine",
+    ).start();
     postgresConnectionUri = postgresContainer.getConnectionUri();
     const pgp = pgPromise();
     db = pgp(postgresConnectionUri);
