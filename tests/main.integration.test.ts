@@ -157,16 +157,18 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
             retries: 150,
           })
           .withStartupTimeout(360_000)
-          // Wait for the admin health check AND the binary protocol port.
-          // Port 6650 can be in LISTEN state before the Pulsar handshake layer
-          // is fully ready, so beforeEach retries createProducer on ConnectError.
-          // Avoid Wait.forLogMessage: 'apachepulsar/pulsar:latest' may emit
-          // different log wording across versions, making it unreliable on CI
-          // where the image is always pulled fresh.
+          // Wait for health check, binary protocol port, AND the broker's own
+          // log line confirming the binary protocol service is fully accepting
+          // connections. Port 6650 enters LISTEN state before the Pulsar
+          // handshake layer is ready; without the log-message wait, createProducer
+          // fails with ConnectError even 40+ seconds after health check passes.
+          // testcontainers captures logs from container start so this wait sees
+          // early log lines even if emitted before the listener attaches.
           .withWaitStrategy(
             testcontainers.Wait.forAll([
               testcontainers.Wait.forHealthCheck(),
               testcontainers.Wait.forListeningPorts(),
+              testcontainers.Wait.forLogMessage(/messaging service is ready/),
             ]),
           )
           .withLogConsumer((stream) => {
@@ -248,10 +250,20 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
       }
       throw err;
     }
+    const pulsarElapsed = Date.now() - pulsarStartTime;
     console.log(
-      `[beforeAll] Pulsar container ready in ${Date.now() - pulsarStartTime}ms` +
+      `[beforeAll] Pulsar container ready in ${pulsarElapsed}ms` +
         ` (id: ${pulsarContainer.getId()})`,
     );
+    // Print first startup log lines to help diagnose wait-strategy issues in CI.
+    if (pulsarLogs.length > 0) {
+      console.log(
+        `[beforeAll] First 5 Pulsar startup log lines (of ${pulsarLogs.length} captured):`,
+      );
+      pulsarLogs.slice(0, 5).forEach((line) => {
+        console.log(`  [PULSAR-STARTUP] ${line}`);
+      });
+    }
     const pulsarHost = pulsarContainer.getHost();
     const pulsarPort = pulsarContainer.getMappedPort(pulsarPortNumber);
     pulsarServiceUrl = `pulsar://${pulsarHost}:${pulsarPort.toString()}`;
@@ -275,12 +287,16 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
     }
     await createPulsarTopics(container, partialApcTopic, hfpTopic, apcTopic);
     console.log(`[beforeEach] Pulsar topics created.`);
-    // Create a fresh client per test to avoid stale connections. Retry a few
-    // times in case the binary protocol is not yet fully accepting connections.
-    const maxProducerAttempts = 5;
+    // Create a fresh Pulsar.Client for each retry attempt. After a ConnectError
+    // the CPP client's connection state is permanently broken — retrying
+    // createProducer on the same instance always fails. We must also bound
+    // client.close() with a race because the CPP client can block in close()
+    // for ~30 s when the connection never completed.
+    const maxProducerAttempts = 20;
     for (let attempt = 1; attempt <= maxProducerAttempts; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      pulsarClient = new Pulsar.Client({ serviceUrl: pulsarServiceUrl });
       try {
-        pulsarClient = new Pulsar.Client({ serviceUrl: pulsarServiceUrl });
         // eslint-disable-next-line no-await-in-loop
         partialApcProducer = await pulsarClient.createProducer({
           topic: partialApcTopic,
@@ -299,11 +315,15 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
         console.warn(
           `[beforeEach] Pulsar client init failed (attempt ${attempt}/${maxProducerAttempts}): ${String(err)}`,
         );
-        if (pulsarClient != null) {
-          // eslint-disable-next-line no-await-in-loop
-          await pulsarClient.close().catch(() => {});
-          pulsarClient = undefined;
-        }
+        const clientToClose = pulsarClient;
+        pulsarClient = undefined;
+        // eslint-disable-next-line no-await-in-loop
+        await Promise.race([
+          clientToClose.close(),
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, 3_000);
+          }),
+        ]).catch(() => {});
         if (attempt >= maxProducerAttempts) {
           throw err;
         }
