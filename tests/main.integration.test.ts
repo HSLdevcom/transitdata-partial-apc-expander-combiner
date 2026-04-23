@@ -118,7 +118,9 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
   let db: pgPromise.IDatabase<unknown>;
   let postgresConnectionUri: string;
 
-  const pulsarImage = "apachepulsar/pulsar:latest";
+  // Pin to 3.x: pulsar-client npm v1.14.0 (CPP client 3.x) is incompatible
+  // with Pulsar 4.x — createProducer fails with ConnectError on every attempt.
+  const pulsarImage = "apachepulsar/pulsar:3.3.5";
   const pulsarPortNumber = 6650;
   // Pulsar container is shared across all tests to avoid the 3-5 minute
   // startup overhead on each test. The client is created per-test so each
@@ -157,17 +159,14 @@ describe("Test using realistic, anonymized data dump extracts and testcontainers
             retries: 150,
           })
           .withStartupTimeout(360_000)
-          // Wait for health check, binary protocol port, AND the broker's own
-          // log line confirming the binary protocol service is fully accepting
-          // connections. Port 6650 enters LISTEN state before the Pulsar
-          // handshake layer is ready; without the log-message wait, createProducer
-          // fails with ConnectError even 40+ seconds after health check passes.
-          // testcontainers captures logs from container start so this wait sees
-          // early log lines even if emitted before the listener attaches.
+          // Wait for health check AND the broker's log line confirming the
+          // binary protocol service is ready. Port 6650 enters LISTEN state
+          // before the Pulsar handshake layer is ready; without the log-message
+          // wait, createProducer can fail with ConnectError even after the
+          // health check passes.
           .withWaitStrategy(
             testcontainers.Wait.forAll([
               testcontainers.Wait.forHealthCheck(),
-              testcontainers.Wait.forListeningPorts(),
               testcontainers.Wait.forLogMessage(/messaging service is ready/),
             ]),
           )
