@@ -74,7 +74,7 @@
     "heap-js": "^2.6.0",
     "jest-junit": "^16.0.0",
     "pg": "^8.16.0",
-    "pg-promise": "^11.14.0",
+    "pg-promise": "^12.7.0",
     "pino": "^9.7.0",
     "protobufjs": "^7.5.3",
     "pulsar-client": "^1.14.0",
